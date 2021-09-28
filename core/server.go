@@ -1,5 +1,7 @@
 package core
 
-type server interface {
+type Server interface {
 	 LoadDefaultConfig()
+	 Init()
 }
+
