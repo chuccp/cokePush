@@ -11,7 +11,9 @@ type Config struct {
 	data map[string]string
 	lock *sync.RWMutex
 }
+
 var defaultConfig = &Config{lock: new(sync.RWMutex)}
+
 func DefaultConfig() *Config {
 
 	return defaultConfig
@@ -37,18 +39,14 @@ func LoadFiles(fileNames []string, charset properties.Encoding) (*Config, error)
 func (config *Config) getValue(key string) string {
 	config.lock.RLock()
 	defer config.lock.RUnlock()
-	v:= config.data[key]
-	if len(v)==0{
-		return defaultConfig.GetString(key)
-	}else{
-		return v
-	}
+	v := config.data[key]
+	return v
 }
 func (config *Config) GetString(key string) string {
 	iSection := config.getValue(key)
 	return iSection
 }
-func (config *Config)GetInt(key string) int {
+func (config *Config) GetInt(key string) int {
 	v := config.GetString(key)
 	if len(v) > 0 {
 		iv, err := strconv.Atoi(v)

@@ -1,7 +1,9 @@
 package core
 
 type Server interface {
-	 LoadDefaultConfig()
-	 Init()
+	Start()error
+	Init()
+	Name()string
 }
+
 
