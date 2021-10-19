@@ -9,6 +9,7 @@ import (
 type Server struct {
 	serveMux *http.ServeMux
 	config   *config.Config
+	port int
 }
 
 func (server *Server) root(w http.ResponseWriter, re *http.Request) {
@@ -16,15 +17,15 @@ func (server *Server) root(w http.ResponseWriter, re *http.Request) {
 	w.Write([]byte("test"))
 }
 func (server *Server) Start() error {
-	port := server.config.GetIntOrDefault("rest.server.port", 8080)
 	srv := &http.Server{
-		Addr:    ":" + strconv.Itoa(port),
+		Addr:    ":" + strconv.Itoa(server.port),
 		Handler: server.serveMux,
 	}
 	error := srv.ListenAndServe()
 	return error
 }
 func (server *Server) Init() {
+	server.port = server.config.GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/",server.root)
 }
 
