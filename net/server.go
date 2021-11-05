@@ -11,7 +11,7 @@ func NewTCPServer(port int) *TCPServer {
 	return &TCPServer{port: port}
 }
 
-func (server *TCPServer) bind() error {
+func (server *TCPServer) Bind() error {
 	listener, err := net.ListenTCP("tcp4", &net.TCPAddr{
 		IP:   net.IPv4zero,
 		Port: server.port,
@@ -22,11 +22,11 @@ func (server *TCPServer) bind() error {
 	return err
 }
 
-func (server *TCPServer) accept() (*Stream,error) {
+func (server *TCPServer) Accept() (*IOStream,error) {
 	tcn, err := server.listener.AcceptTCP()
-	if err!=nil{
-		stream := NewStream(tcn)
+	if err==nil{
+		stream := NewIOStream(tcn)
 		return stream,err
 	}
-	return nil,nil
+	return nil,err
 }

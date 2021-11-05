@@ -6,20 +6,20 @@ import (
 	"net"
 )
 
-type Stream struct {
+type IOStream struct {
 	*net.TCPConn
 	read_         *bufio.Reader
 	write_        *bufio.Writer
 	isManualClose bool
 }
 
-func NewStream(conn *net.TCPConn) *Stream {
-	var sm *Stream = &Stream{TCPConn: conn, isManualClose: false}
+func NewIOStream(conn *net.TCPConn) *IOStream {
+	var sm = &IOStream{TCPConn: conn, isManualClose: false}
 	sm.read_ = bufio.NewReader(conn)
 	sm.write_ = bufio.NewWriter(conn)
 	return sm
 }
-func (stream *Stream) ReadLine() ([]byte, error) {
+func (stream *IOStream) ReadLine() ([]byte, error) {
 	buffer := bytes.Buffer{}
 	for {
 		data, is, err := stream.read_.ReadLine()
@@ -37,7 +37,7 @@ func (stream *Stream) ReadLine() ([]byte, error) {
 	}
 	return nil, nil
 }
-func (stream *Stream) read(len int) ([]byte, error) {
+func (stream *IOStream) read(len int) ([]byte, error) {
 	data := make([]byte, len)
 	var l = 0
 	for l < len {
@@ -49,7 +49,7 @@ func (stream *Stream) read(len int) ([]byte, error) {
 	}
 	return data, nil
 }
-func (stream *Stream) readUint(len uint32) ([]byte, error) {
+func (stream *IOStream) readUint(len uint32) ([]byte, error) {
 	data := make([]byte, len)
 	var l uint32 = 0
 	for l < len {
@@ -61,37 +61,37 @@ func (stream *Stream) readUint(len uint32) ([]byte, error) {
 	}
 	return data, nil
 }
-func (stream *Stream) ReadUintBytes(len uint32) ([]byte, error) {
+func (stream *IOStream) ReadUintBytes(len uint32) ([]byte, error) {
 	return stream.readUint(len)
 }
 
-func (stream *Stream) ReadBytes(len int) ([]byte, error) {
+func (stream *IOStream) ReadBytes(len int) ([]byte, error) {
 	return stream.read(len)
 }
-func (stream *Stream) ReadByte() (byte, error) {
+func (stream *IOStream) ReadByte() (byte, error) {
 	return stream.read_.ReadByte()
 }
-func (stream *Stream) Write(data []byte) (int, error) {
+func (stream *IOStream) Write(data []byte) (int, error) {
 	num, err := stream.TCPConn.Write(data)
 	if err != nil {
 		return num, err
 	}
 	return num, err
 }
-func (stream *Stream) GetLocalAddress() *net.TCPAddr {
+func (stream *IOStream) GetLocalAddress() *net.TCPAddr {
 	if stream.LocalAddr()==nil{
 		return nil
 	}
 	return stream.LocalAddr().(*net.TCPAddr)
 }
-func (stream *Stream) GetRemoteAddress() *net.TCPAddr {
+func (stream *IOStream) GetRemoteAddress() *net.TCPAddr {
 	return stream.RemoteAddr().(*net.TCPAddr)
 }
 
-func (stream *Stream) ManualClose() {
+func (stream *IOStream) ManualClose() {
 	stream.isManualClose = true
 	stream.Close()
 }
-func (stream *Stream) IsManualClose() bool {
+func (stream *IOStream) IsManualClose() bool {
 	return stream.isManualClose
 }
