@@ -16,13 +16,11 @@ func NewClient(stream *net.IOStream) (*Client, error) {
 
 func (client *Client) Start() {
 
-	msg,err := client.stream.ReadMessage()
-	if err==nil{
+	msg, err := client.stream.ReadMessage()
+	if err == nil {
 		type_, err := msg.GetMessageType()
 		if err == nil {
 			if type_ == km.BasicMessage {
-
-
 
 			}
 		}

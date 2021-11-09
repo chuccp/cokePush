@@ -1,6 +1,7 @@
 package km
 
 import (
+	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
 )
@@ -49,7 +50,7 @@ func (stream *Stream) verify() error {
 
 	return err
 }
-func (stream *Stream) ReadMessage() (Message,error) {
+func (stream *Stream) ReadMessage() (message.Message,error) {
 	 return stream.km.ReadMessage()
 
 }
