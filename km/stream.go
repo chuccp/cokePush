@@ -50,7 +50,7 @@ func (stream *Stream) verify() error {
 
 	return err
 }
-func (stream *Stream) ReadMessage() (message.Message,error) {
+func (stream *Stream) ReadMessage() (message.IMessage,error) {
 	 return stream.km.ReadMessage()
 
 }

@@ -7,7 +7,7 @@ func (bm *BasicMessage)GetMessageType() int8{
 	return BasicMessageType
 }
 
-func createBasicMessage(fromUser string,toUser string,messageText string)* BasicMessage {
+func CreateBasicMessage(fromUser string,toUser string,messageText string)* BasicMessage {
 	bm:=&BasicMessage{}
 	bm.SetValue(FromUser,fromUser)
 	bm.SetValue(ToUser,toUser)
