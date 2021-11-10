@@ -5,6 +5,7 @@ type IMessage interface {
 	GetTimestamp() int
 	GetMessageLength() int
 	GetMessageType() int8
+	GetClassId() int8
 	GetValue(key int) interface{}
 	GetKeys() []int8
 	SetValue(key int, value interface{})
@@ -20,6 +21,9 @@ func (message *Message) GetTimestamp() int {
 	return 0
 }
 func (message *Message) GetMessageLength() int {
+	return 0
+}
+func (message *Message)GetClassId() int8{
 	return 0
 }
 func (message *Message) GetMessageType() int8 {

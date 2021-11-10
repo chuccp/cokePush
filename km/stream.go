@@ -33,7 +33,7 @@ func (stream *Stream) verify() error {
 			ver, err := stream.io.ReadBytes(4)
 			if err == nil {
 				if util.Equal(ver, []byte{0, 0, 0, 1}) {
-					stream.km = NewKm00001()
+					stream.km = NewKm00001(stream.io)
 				} else {
 					stream.close(0)
 				}
@@ -52,8 +52,11 @@ func (stream *Stream) verify() error {
 }
 func (stream *Stream) ReadMessage() (message.IMessage,error) {
 	 return stream.km.ReadMessage()
-
 }
+func (stream *Stream) WriteMessage(msg message.IMessage)error {
+	return stream.km.WriteMessage(msg)
+}
+
 func (stream *Stream) close(code int) {
 
 }
