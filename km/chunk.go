@@ -1,6 +1,9 @@
 package km
 
-import "github.com/chuccp/cokePush/message"
+import (
+	"github.com/chuccp/cokePush/message"
+	"github.com/chuccp/cokePush/util"
+)
 
 type chunk0 struct {
 	*Chunk
@@ -10,9 +13,29 @@ type chunk0 struct {
 	data          []byte
 }
 
-func createChunk0(messageType byte, messageLength int, messageId int, time int, key byte, dataLen int, data []byte) *chunk0 {
+func createChunk0(classType byte, messageLength uint32, messageId uint32, time uint32, key byte, dataLen int, data []byte) *chunk0 {
 
-	return &chunk0{}
+	return &chunk0{Chunk: &Chunk{classType}, messageHeader: messageHeader(messageLength, messageId, time), key: key, dataLen: dataLen, data: data}
+}
+
+func messageHeader(messageLength uint32, messageId uint32, time uint32) []byte {
+
+	if messageLength-32_767 < 0 {
+		b := []byte{0, 0}
+		b[0] = byte(messageLength)
+		b[1] = byte(messageLength >> 8)
+	} else {
+		b := []byte{0, 0, 0, 0}
+		var pre = (messageLength) | 32_768
+		b[0] = byte(pre)
+		b[1] = byte(pre >> 8)
+		b[2] = byte(messageLength >> 15)
+		b[3] = byte(messageLength >> 23)
+	}
+
+	util.U32TOBytes(messageId)
+
+	return nil
 }
 
 type chunk1 struct {
@@ -22,9 +45,9 @@ type chunk1 struct {
 	data    []byte
 }
 
-func createChunk1(messageType byte, key byte, dataLen int, data []byte) *chunk1 {
+func createChunk1(classType byte, key byte, dataLen int, data []byte) *chunk1 {
 
-	return &chunk1{}
+	return &chunk1{Chunk: &Chunk{64 | classType}}
 }
 
 type chunk2 struct {
@@ -32,15 +55,17 @@ type chunk2 struct {
 	data []byte
 }
 
-func createChunk2(messageType byte, data []byte) *chunk2 {
-
-	return &chunk2{}
+func createChunk2(classType byte, data []byte) *chunk2 {
+	return &chunk2{Chunk: &Chunk{128 | classType}}
 }
 
 type Chunk struct {
 	chunkHeader byte
 }
 
+func (chunk *Chunk) setChunkHeader(chunkType byte, classType byte) {
+	chunk.chunkHeader = chunkType<<6 | classType
+}
 func (chunk *Chunk) chunkType() byte {
 	return chunk.chunkHeader >> 6
 }

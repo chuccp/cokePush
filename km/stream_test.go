@@ -3,6 +3,7 @@ package km
 import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/util"
+	"math"
 	"testing"
 )
 
@@ -25,4 +26,7 @@ func TestStream_WriteMessage(t *testing.T) {
 		k := NewKm00001(fs)
 		k.WriteMessage(bm)
 	}
+
+
+	println(math.MaxInt32)
 }
