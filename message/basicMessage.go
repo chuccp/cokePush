@@ -3,7 +3,7 @@ package message
 type BasicMessage struct {
 	*Message
 }
-func (bm *BasicMessage)GetMessageType() int8{
+func (bm *BasicMessage)GetMessageType() byte{
 	return BasicMessageType
 }
 

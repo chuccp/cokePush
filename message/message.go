@@ -4,10 +4,10 @@ type IMessage interface {
 	GetMessageId() int
 	GetTimestamp() int
 	GetMessageLength() int
-	GetMessageType() int8
-	GetClassId() int8
+	GetMessageType() byte
+	GetClassId() byte
 	GetValue(key int) interface{}
-	GetKeys() []int8
+	GetKeys() []byte
 	SetValue(key int, value interface{})
 }
 
@@ -23,10 +23,10 @@ func (message *Message) GetTimestamp() int {
 func (message *Message) GetMessageLength() int {
 	return 0
 }
-func (message *Message)GetClassId() int8{
+func (message *Message)GetClassId() byte{
 	return 0
 }
-func (message *Message) GetMessageType() int8 {
+func (message *Message) GetMessageType() byte {
 	return 0
 }
 func (message *Message) GetValue(key int) interface{} {
@@ -38,6 +38,6 @@ func (message *Message) GetString(key int) string {
 func (message *Message) SetValue(key int, value interface{}) {
 
 }
-func (message *Message) GetKeys() []int8 {
+func (message *Message) GetKeys() []byte {
 	return nil
 }

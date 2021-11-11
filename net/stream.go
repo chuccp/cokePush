@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"net"
 )
-
 type IOStream struct {
 	*net.TCPConn
 	read_         *bufio.Reader
@@ -72,11 +71,7 @@ func (stream *IOStream) ReadByte() (byte, error) {
 	return stream.read_.ReadByte()
 }
 func (stream *IOStream) Write(data []byte) (int, error) {
-	num, err := stream.TCPConn.Write(data)
-	if err != nil {
-		return num, err
-	}
-	return num, err
+	return stream.TCPConn.Write(data)
 }
 func (stream *IOStream) GetLocalAddress() *net.TCPAddr {
 	if stream.LocalAddr()==nil{
