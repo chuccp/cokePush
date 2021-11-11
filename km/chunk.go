@@ -6,20 +6,23 @@ type chunk0 struct {
 	*Chunk
 	messageHeader []byte
 	key           byte
+	dataLen       int
 	data          []byte
 }
 
-func createChunk0(messageType byte, messageLength int, messageId int, time int,key byte, data []byte) *chunk0 {
+func createChunk0(messageType byte, messageLength int, messageId int, time int, key byte, dataLen int, data []byte) *chunk0 {
+
 	return &chunk0{}
 }
 
 type chunk1 struct {
 	*Chunk
-	key  byte
-	data []byte
+	key     byte
+	dataLen int
+	data    []byte
 }
 
-func createChunk1(messageType byte, key byte, data []byte) *chunk1 {
+func createChunk1(messageType byte, key byte, dataLen int, data []byte) *chunk1 {
 
 	return &chunk1{}
 }
@@ -75,16 +78,16 @@ func (stream *chunkStream) readChunk() IChunk {
 	}
 	if stream.process == 0 {
 		stream.process = 1
-		return createChunk0(stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(),key, data[start:end])
+		return createChunk0(stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(), key, len(data), data[start:end])
 	} else if stream.process == 1 {
 
-		chunk := createChunk1(stream.message.GetMessageType(), key, data[start:end])
+		chunk := createChunk1(stream.message.GetMessageType(), key, len(data), data[start:end])
 		if stream.dataLen > 0 {
 			stream.process = 2
 		}
 		stream.keyIndex++
 		return chunk
-	} else if stream.process == 2{
+	} else if stream.process == 2 {
 		chunk := createChunk2(stream.message.GetMessageType(), data[start:end])
 		if stream.dataLen == 0 {
 			stream.process = 1
