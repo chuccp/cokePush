@@ -6,9 +6,9 @@ type IMessage interface {
 	GetMessageLength() int
 	GetMessageType() byte
 	GetClassId() byte
-	GetValue(key int) interface{}
+	GetValue(key byte) []byte
 	GetKeys() []byte
-	SetValue(key int, value interface{})
+	SetValue(key byte, value interface{})
 }
 
 type Message struct {
@@ -29,13 +29,13 @@ func (message *Message)GetClassId() byte{
 func (message *Message) GetMessageType() byte {
 	return 0
 }
-func (message *Message) GetValue(key int) interface{} {
+func (message *Message) GetValue(key byte) []byte {
 	return nil
 }
-func (message *Message) GetString(key int) string {
+func (message *Message) GetString(key byte) string {
 	return ""
 }
-func (message *Message) SetValue(key int, value interface{}) {
+func (message *Message) SetValue(key byte, value interface{}) {
 
 }
 func (message *Message) GetKeys() []byte {
