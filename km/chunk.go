@@ -17,8 +17,8 @@ type chunk0 struct {
 	data          []byte
 }
 
-func createChunk0(chunkId byte, classType byte, messageType byte, messageLength uint32, messageId uint32, time uint32, key byte, dataLen uint32, data []byte) *chunk0 {
-	return &chunk0{chunk: &chunk{chunkId}, messageType: messageType, messageLength: messageLength, messageId: messageId, time: time, key: key, dataLen: dataLen, data: data}
+func createChunk0(chunkId uint16, classType byte, messageType byte, messageLength uint32, messageId uint32, time uint32, key byte, dataLen uint32, data []byte) *chunk0 {
+	return &chunk0{chunk: createChunkHeader(0,chunkId),classType:classType, messageType: messageType, messageLength: messageLength, messageId: messageId, time: time, key: key, dataLen: dataLen, data: data}
 }
 
 func (chunk0 chunk0) toByte() []byte {
@@ -68,9 +68,9 @@ type chunk1 struct {
 	data    []byte
 }
 
-func createChunk1(classType byte, key byte, dataLen uint32, data []byte) *chunk1 {
+func createChunk1(chunkId uint16,  key byte, dataLen uint32, data []byte) *chunk1 {
 
-	return &chunk1{chunk: &chunk{64 | classType},dataLen: dataLen,key: key,data: data}
+	return &chunk1{chunk: createChunkHeader(1,chunkId),dataLen: dataLen,key: key,data: data}
 }
 
 func (chunk1 chunk1) toByte() []byte {
@@ -89,8 +89,8 @@ type chunk2 struct {
 	data []byte
 }
 
-func createChunk2(chunkId byte, data []byte) *chunk2 {
-	return &chunk2{chunk: &chunk{128 | chunkId},data: data}
+func createChunk2(chunkId uint16, data []byte) *chunk2 {
+	return &chunk2{chunk: createChunkHeader(2,chunkId),data: data}
 }
 func (chunk2 chunk2) toByte() []byte {
 	bytesArray := make([]byte, 0)
@@ -100,25 +100,26 @@ func (chunk2 chunk2) toByte() []byte {
 }
 
 type chunk struct {
-	chunkHeader byte
+	chunkHeader uint16
 }
 
-func (chunk *chunk) setChunkHeader(chunkType byte, chunkId byte) {
-	chunk.chunkHeader = chunkType<<6 | chunkId
+func  createChunkHeader(chunkType byte, chunkId uint16)*chunk {
+
+	return &chunk{ uint16(chunkType)<<14 | chunkId}
 }
 func (chunk *chunk) chunkType() byte {
-	return chunk.chunkHeader >> 6
+	return byte(chunk.chunkHeader >> 14)
 }
-func (chunk *chunk) chunkId() byte {
+func (chunk *chunk) chunkId() uint16 {
 	return chunk.chunkHeader << 2 >> 2
 }
 func (chunk *chunk) toByte() []byte {
-	return []byte{chunk.chunkHeader}
+	return util.U16TOBytes(chunk.chunkHeader)
 }
 
 type IChunk interface {
 	chunkType() byte
-	chunkId() byte
+	chunkId() uint16
 	toByte() []byte
 }
 
@@ -130,7 +131,7 @@ type chunkStream struct {
 	rMessageLength uint32
 
 	keyIndex byte
-	chunkId  byte
+	chunkId  uint16
 
 	rdataLenTemp uint32
 	dataLenTemp  uint32
@@ -174,14 +175,14 @@ func (stream *chunkStream) readChunk() IChunk {
 		return chunk
 	} else if stream.process == 1 {
 
-		chunk := createChunk1(stream.message.GetMessageType(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
+		chunk := createChunk1(stream.chunkId,stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
 		if stream.rdataLenTemp < stream.dataLenTemp {
 			stream.process = 2
 		}
 		return chunk
 	} else if stream.process == 2 {
 
-		chunk := createChunk2(stream.message.GetMessageType(), stream.dataTemp[start:end])
+		chunk := createChunk2(stream.chunkId, stream.dataTemp[start:end])
 		if stream.rdataLenTemp == stream.dataLenTemp {
 			stream.process = 1
 		}

@@ -7,16 +7,10 @@ import (
 func TestEqual(t *testing.T) {
 
 
-	var code1 = []byte("ansdfkjdoiwdwdhwqdhansdfkjoiwdwdhwqdh")
-	var code2 = []byte("ansdfkjdoiwdwdhwqdhansdfkjoiwdwdhwqdh")
-	t.Log("sys")
-	num:=1000_000_000
-	var i = 0
-	for  i=0;i<num;i++ {
-		Equal(code1,code2)
-	}
 
-	t.Log("sys end")
 
+	var num uint32= 1024
+	data:=U32TOBytes2(num)
+	println(data[0])
 
 }

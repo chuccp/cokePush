@@ -1,6 +1,8 @@
 package util
 
-import "math/rand"
+import (
+	"math/rand"
+)
 
 func ChunkId() byte {
 	return byte(rand.Intn(64))
