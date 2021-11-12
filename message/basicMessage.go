@@ -8,9 +8,9 @@ func (bm *BasicMessage)GetMessageType() byte{
 }
 
 func CreateBasicMessage(fromUser string,toUser string,messageText string)* BasicMessage {
-	bm:=&BasicMessage{}
-	bm.SetValue(FromUser,fromUser)
-	bm.SetValue(ToUser,toUser)
-	bm.SetValue(MessageText,messageText)
+	bm:=&BasicMessage{Message:CreateMessage()}
+	bm.SetString(FromUser,fromUser)
+	bm.SetString(ToUser,toUser)
+	bm.SetString(Text,messageText)
 	return bm
 }

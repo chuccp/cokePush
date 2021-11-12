@@ -33,8 +33,6 @@ func (km *km00001) WriteMessage(msg message.IMessage) error {
 	return nil
 }
 func (km *km00001) writeChunk(chunk IChunk) error {
-
-
-
-	return nil
+	_,err:=km.io.Write(chunk.toByte())
+	return err
 }

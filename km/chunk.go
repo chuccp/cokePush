@@ -39,10 +39,15 @@ func (chunk0 chunk0) toByte() []byte {
 }
 
 func lengthToBytes(length uint32) []byte {
-	if length-32_767 < 0 {
+
+
+
+
+	if length<32_767 {
 		b := []byte{0, 0}
 		b[0] = byte(length)
 		b[1] = byte(length >> 8)
+
 		return b
 	} else {
 		b := []byte{0, 0, 0, 0}
@@ -51,6 +56,7 @@ func lengthToBytes(length uint32) []byte {
 		b[1] = byte(pre >> 8)
 		b[2] = byte(length >> 15)
 		b[3] = byte(length >> 23)
+
 		return b
 	}
 }
@@ -64,7 +70,7 @@ type chunk1 struct {
 
 func createChunk1(classType byte, key byte, dataLen uint32, data []byte) *chunk1 {
 
-	return &chunk1{chunk: &chunk{64 | classType}}
+	return &chunk1{chunk: &chunk{64 | classType},dataLen: dataLen,key: key,data: data}
 }
 
 func (chunk1 chunk1) toByte() []byte {
@@ -84,7 +90,7 @@ type chunk2 struct {
 }
 
 func createChunk2(chunkId byte, data []byte) *chunk2 {
-	return &chunk2{chunk: &chunk{128 | chunkId}}
+	return &chunk2{chunk: &chunk{128 | chunkId},data: data}
 }
 func (chunk2 chunk2) toByte() []byte {
 	bytesArray := make([]byte, 0)
@@ -107,7 +113,7 @@ func (chunk *chunk) chunkId() byte {
 	return chunk.chunkHeader << 2 >> 2
 }
 func (chunk *chunk) toByte() []byte {
-	return nil
+	return []byte{chunk.chunkHeader}
 }
 
 type IChunk interface {
@@ -156,7 +162,9 @@ func (stream *chunkStream) readChunk() IChunk {
 	}
 	stream.rdataLenTemp = end
 	stream.rMessageLength = stream.rMessageLength + end - start
+
 	if stream.process == 0 {
+
 		chunk := createChunk0(stream.chunkId, stream.message.GetClassId(), stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
 		if stream.rdataLenTemp < stream.dataLenTemp {
 			stream.process = 2
@@ -165,13 +173,14 @@ func (stream *chunkStream) readChunk() IChunk {
 		}
 		return chunk
 	} else if stream.process == 1 {
+
 		chunk := createChunk1(stream.message.GetMessageType(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
 		if stream.rdataLenTemp < stream.dataLenTemp {
 			stream.process = 2
 		}
-		stream.keyIndex++
 		return chunk
 	} else if stream.process == 2 {
+
 		chunk := createChunk2(stream.message.GetMessageType(), stream.dataTemp[start:end])
 		if stream.rdataLenTemp == stream.dataLenTemp {
 			stream.process = 1

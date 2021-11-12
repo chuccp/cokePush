@@ -15,5 +15,5 @@ func( file *FileStream)Read(p []byte) (n int, err error){
 }
 
 func( file *FileStream)Write(p []byte) (n int, err error){
-	return file.Write(p)
+	return file.file.Write(p)
 }

@@ -3,6 +3,7 @@ package message
 import (
 	"github.com/chuccp/cokePush/util"
 	"math/rand"
+	"time"
 )
 
 type IMessage interface {
@@ -28,14 +29,13 @@ type Message struct {
 }
 
 func CreateMessage() *Message {
-
-	return &Message{messageId: msgId()}
+	return &Message{messageId: msgId(),time: millisecond(),keys: make([]byte,0),data: make(map[byte][]byte)}
 }
 func (message *Message) GetMessageId() uint32 {
-	return 0
+	return message.messageId
 }
 func (message *Message) GetTimestamp() uint32 {
-	return 0
+	return message.time
 }
 func (message *Message) GetMessageLength() uint32 {
 	return message.messageLength
@@ -50,7 +50,7 @@ func (message *Message) GetValue(key byte) []byte {
 	return message.data[key]
 }
 func (message *Message) GetString(key byte) string {
-	return ""
+	return string(message.data[key])
 }
 func (message *Message) SetString(key byte, value string) {
 	message.SetValue(key, []byte(value))
@@ -61,9 +61,13 @@ func (message *Message) SetValue(key byte, value []byte) {
 	message.messageLength = message.messageLength + uint32(len(value))
 }
 func (message *Message) GetKeys() []byte {
-	return nil
+	return message.keys
 }
 func msgId() uint32 {
 	num := rand.Intn(1024)
 	return util.Millisecond()<<10 | (uint32(num))
+}
+func millisecond() uint32 {
+	ms := time.Now().UnixNano() / 1e6
+	return uint32(ms)
 }
