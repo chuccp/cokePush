@@ -22,7 +22,7 @@ func (server *TCPServer) Bind() error {
 	return err
 }
 
-func (server *TCPServer) Accept() (*IOStream,error) {
+func (server *TCPServer) Accept() (*IONetStream,error) {
 	tcn, err := server.listener.AcceptTCP()
 	if err==nil{
 		stream := NewIOStream(tcn)

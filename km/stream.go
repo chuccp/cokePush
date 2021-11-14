@@ -9,12 +9,12 @@ import (
 var code []byte = []byte{'c', 'o', 'k', 'e'}
 
 type Stream struct {
-	io        *net.IOStream
+	io        *net.IONetStream
 	chunkSize int
 	km km
 }
 
-func NewStream(io *net.IOStream) (*Stream, error) {
+func NewStream(io *net.IONetStream) (*Stream, error) {
 	st := &Stream{io: io, chunkSize: 512}
 	st.init()
 	return st, nil

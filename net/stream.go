@@ -3,22 +3,18 @@ package net
 import (
 	"bufio"
 	"bytes"
+	"io"
 	"net"
 )
-type IOStream struct {
-	*net.TCPConn
+
+type IOReadStream struct {
 	read_         *bufio.Reader
-	write_        *bufio.Writer
-	isManualClose bool
+}
+func NewIOReadStream(read io.Reader) *IOReadStream {
+	return &IOReadStream{read_:bufio.NewReader(read)}
 }
 
-func NewIOStream(conn *net.TCPConn) *IOStream {
-	var sm = &IOStream{TCPConn: conn, isManualClose: false}
-	sm.read_ = bufio.NewReader(conn)
-	sm.write_ = bufio.NewWriter(conn)
-	return sm
-}
-func (stream *IOStream) ReadLine() ([]byte, error) {
+func (stream *IOReadStream) ReadLine() ([]byte, error) {
 	buffer := bytes.Buffer{}
 	for {
 		data, is, err := stream.read_.ReadLine()
@@ -36,7 +32,7 @@ func (stream *IOStream) ReadLine() ([]byte, error) {
 	}
 	return nil, nil
 }
-func (stream *IOStream) read(len int) ([]byte, error) {
+func (stream *IOReadStream) read(len int) ([]byte, error) {
 	data := make([]byte, len)
 	var l = 0
 	for l < len {
@@ -48,7 +44,7 @@ func (stream *IOStream) read(len int) ([]byte, error) {
 	}
 	return data, nil
 }
-func (stream *IOStream) readUint(len uint32) ([]byte, error) {
+func (stream *IOReadStream) readUint(len uint32) ([]byte, error) {
 	data := make([]byte, len)
 	var l uint32 = 0
 	for l < len {
@@ -60,33 +56,56 @@ func (stream *IOStream) readUint(len uint32) ([]byte, error) {
 	}
 	return data, nil
 }
-func (stream *IOStream) ReadUintBytes(len uint32) ([]byte, error) {
+func (stream *IOReadStream) ReadUintBytes(len uint32) ([]byte, error) {
 	return stream.readUint(len)
 }
 
-func (stream *IOStream) ReadBytes(len int) ([]byte, error) {
+func (stream *IOReadStream) ReadBytes(len int) ([]byte, error) {
 	return stream.read(len)
 }
-func (stream *IOStream) ReadByte() (byte, error) {
+func (stream *IOReadStream) ReadByte() (byte, error) {
 	return stream.read_.ReadByte()
 }
-func (stream *IOStream) Write(data []byte) (int, error) {
-	return stream.TCPConn.Write(data)
+
+
+
+type IOWriteStream struct {
+	write_        *bufio.Writer
 }
-func (stream *IOStream) GetLocalAddress() *net.TCPAddr {
+func NewIOWriteStream(write io.Writer) *IOWriteStream {
+	return &IOWriteStream{write_:bufio.NewWriter(write)}
+}
+
+func (stream *IOWriteStream) Write(data []byte) (int, error) {
+	return stream.write_.Write(data)
+}
+type IONetStream struct {
+	*net.TCPConn
+	*IOReadStream
+	*IOWriteStream
+	isManualClose bool
+}
+
+func NewIOStream(conn *net.TCPConn) *IONetStream {
+	var sm = &IONetStream{TCPConn: conn, isManualClose: false}
+	sm.read_ = bufio.NewReader(conn)
+	sm.write_ = bufio.NewWriter(conn)
+	return sm
+}
+func (stream *IONetStream) GetLocalAddress() *net.TCPAddr {
 	if stream.LocalAddr()==nil{
 		return nil
 	}
 	return stream.LocalAddr().(*net.TCPAddr)
 }
-func (stream *IOStream) GetRemoteAddress() *net.TCPAddr {
+func (stream *IONetStream) GetRemoteAddress() *net.TCPAddr {
 	return stream.RemoteAddr().(*net.TCPAddr)
 }
 
-func (stream *IOStream) ManualClose() {
+func (stream *IONetStream) ManualClose() {
 	stream.isManualClose = true
 	stream.Close()
 }
-func (stream *IOStream) IsManualClose() bool {
+func (stream *IONetStream) IsManualClose() bool {
 	return stream.isManualClose
 }

@@ -9,7 +9,7 @@ type Client struct {
 	stream *km.Stream
 }
 
-func NewClient(stream *net.IOStream) (*Client, error) {
+func NewClient(stream *net.IONetStream) (*Client, error) {
 	kmStream, err := km.NewStream(stream)
 	return &Client{stream: kmStream}, err
 }

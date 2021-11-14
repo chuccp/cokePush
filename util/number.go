@@ -80,7 +80,12 @@ func U16TOBytes(i uint16) []byte {
 	b[1] = byte(i >> 8)
 	return b
 }
-
+func BytesTOU16(data []byte) uint16{
+	var num uint16
+	num = num|uint16(data[0])
+	num = num<<8|uint16(data[1])
+	return num
+}
 func ReadUintBE(b []byte) (uint32, error) {
 	ret := uint32(0)
 	for i := 0; i < len(b); i++ {
