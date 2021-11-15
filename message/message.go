@@ -16,6 +16,12 @@ type IMessage interface {
 	GetKeys() []byte
 	SetString(key byte, value string)
 	SetValue(key byte, value []byte)
+
+	SetMessageId(messageId uint32)
+	SetTimestamp(time uint32)
+	SetMessageLength(msgLen uint32)
+	SetMessageType(messageType byte)
+	SetClassId(classId byte)
 }
 
 type Message struct {
@@ -28,8 +34,11 @@ type Message struct {
 	messageId     uint32
 }
 
+func NewMessage() *Message {
+	return &Message{}
+}
 func CreateMessage() *Message {
-	return &Message{messageId: msgId(),time: millisecond(),keys: make([]byte,0),data: make(map[byte][]byte)}
+	return &Message{messageId: msgId(), time: millisecond(), keys: make([]byte, 0), data: make(map[byte][]byte)}
 }
 func (message *Message) GetMessageId() uint32 {
 	return message.messageId
@@ -63,6 +72,23 @@ func (message *Message) SetValue(key byte, value []byte) {
 func (message *Message) GetKeys() []byte {
 	return message.keys
 }
+
+func (message *Message) SetMessageId(messageId uint32) {
+	message.messageId = messageId
+}
+func (message *Message) SetTimestamp(time uint32) {
+	message.time = time
+}
+func (message *Message) SetMessageLength(msgLen uint32) {
+	message.messageLength = msgLen
+}
+func (message *Message) SetMessageType(messageType byte) {
+	message.messageType = messageType
+}
+func (message *Message) SetClassId(classId byte) {
+	message.classId = classId
+}
+
 func msgId() uint32 {
 	num := rand.Intn(1024)
 	return util.Millisecond()<<10 | (uint32(num))
