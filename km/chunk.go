@@ -33,7 +33,7 @@ func init() {
 	}}
 
 }
-func getChunkWriteStreamPool(msg message.IMessage)*chunkWriteStream  {
+func createChunkWriteStreamPool(msg message.IMessage)*chunkWriteStream  {
 	var chunkWriteStream = chunkWriteStreamPool.Get().(*chunkWriteStream)
 	chunkWriteStream.maxBodySize = 512
 	chunkWriteStream.chunkId = getChunkId()
@@ -44,46 +44,46 @@ func getChunkWriteStreamPool(msg message.IMessage)*chunkWriteStream  {
 	chunkWriteStream.rMessageLength = 0
 	return chunkWriteStream
 }
-func getChunkReadStream(read_ io.Reader)* chunkReadStream {
+func createChunkReadStream(read_ io.Reader)* chunkReadStream {
 	var chunkReadStream = chunkReadStreamPool.Get().(*chunkReadStream)
 	chunkReadStream.read_ = net.NewIOReadStream(read_)
 	chunkReadStream.maxBodySize = 512
 	chunkReadStream.recordMap = make(map[uint16]*chunkRecord)
 	return chunkReadStream
 }
-func putChunkWriteStream(crm * chunkWriteStream )  {
+func freeChunkWriteStream(crm * chunkWriteStream )  {
 	chunkWriteStreamPool.Put(crm)
 }
-func putChunkReadStream(crm * chunkReadStream )  {
+func freeChunkReadStream(crm * chunkReadStream )  {
 	chunkReadStreamPool.Put(crm)
 }
 
 
 
-func getPoolChunk0(chunk *chunk) *chunk0 {
+func createPoolChunk0(chunk *chunk) *chunk0 {
 	var chk = (chunk0Pool.Get()).(*chunk0)
 	chk.chunk = chunk
 	return chk
 }
-func putPoolChunk0(chunk *chunk0) {
+func freePoolChunk0(chunk *chunk0) {
 	chunk0Pool.Put(chunk)
 }
 
-func getPoolChunk1(chunk *chunk) *chunk1 {
+func createPoolChunk1(chunk *chunk) *chunk1 {
 	var chk = (chunk1Pool.Get()).(*chunk1)
 	chk.chunk = chunk
 	return chk
 }
-func putPoolChunk1(chunk *chunk1) {
+func freePoolChunk1(chunk *chunk1) {
 	chunk1Pool.Put(chunk)
 }
 
-func getPoolChunk2(chunk *chunk) *chunk2 {
+func createPoolChunk2(chunk *chunk) *chunk2 {
 	var chk = (chunk2Pool.Get()).(*chunk2)
 	chk.chunk = chunk
 	return chk
 }
-func putPoolChunk2(chunk *chunk2) {
+func freePoolChunk2(chunk *chunk2) {
 	chunk2Pool.Put(chunk)
 }
 
@@ -392,7 +392,7 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 		ck := createChunkHeader2(data)
 		chunkId := ck.chunkId()
 		if ck.chunkType() == 0 {
-			chunk0 := getPoolChunk0(ck)
+			chunk0 := createPoolChunk0(ck)
 			data, err = stream.read_.ReadBytes(10)
 			chunk0.classId = data[0]
 			chunk0.messageType = data[1]
@@ -413,14 +413,14 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 						}
 						fa := stream.putChunk0(chunkId, chunk0)
 
-						putPoolChunk0(chunk0)
+						freePoolChunk0(chunk0)
 						return chunkId, fa, nil
 					}
 				}
 			}
-			putPoolChunk0(chunk0)
+			freePoolChunk0(chunk0)
 		} else if ck.chunkType() == 1 {
-			chunk1 := getPoolChunk1(ck)
+			chunk1 := createPoolChunk1(ck)
 			chunk1.key, err = stream.read_.ReadByte()
 			if err == nil {
 				chunk1.dataLen, err = stream.readMessageLength()
@@ -432,26 +432,26 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 						chunk1.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
 					}
 					fa := stream.putChunk1(chunkId, chunk1)
-					putPoolChunk1(chunk1)
+					freePoolChunk1(chunk1)
 					return chunkId, fa, nil
 				}
 			}
-			putPoolChunk1(chunk1)
+			freePoolChunk1(chunk1)
 		} else if ck.chunkType() == 2 {
-			chunk2 := getPoolChunk2(ck)
+			chunk2 := createPoolChunk2(ck)
 			dataLen := stream.GetRDataLength(chunk2.chunkId())
 			if dataLen > stream.maxBodySize {
 				chunk2.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
 				fa := stream.putChunk2(chunkId, chunk2)
-				putPoolChunk2(chunk2)
+				freePoolChunk2(chunk2)
 				return chunkId, fa, nil
 			} else {
 				chunk2.data, err = stream.read_.ReadUintBytes(dataLen)
 				fa := stream.putChunk2(chunkId, chunk2)
-				putPoolChunk2(chunk2)
+				freePoolChunk2(chunk2)
 				return chunkId, fa, nil
 			}
-			putPoolChunk2(chunk2)
+			freePoolChunk2(chunk2)
 		}
 	}
 	return 0, false, err

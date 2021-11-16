@@ -19,22 +19,22 @@ func NewKm00001(io io.ReadWriter) *km00001 {
 	return &km00001{io: io}
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
-	chunkStream := getChunkReadStream(km.io)
+	chunkStream := createChunkReadStream(km.io)
 	msg,err:= chunkStream.readMessage()
-	putChunkReadStream(chunkStream)
+	freeChunkReadStream(chunkStream)
 	return msg, err
 }
 func (km *km00001) WriteMessage(msg message.IMessage) error {
-	chunkStream := getChunkWriteStreamPool(msg)
+	chunkStream := createChunkWriteStreamPool(msg)
 	for chunkStream.hasNext() {
 		chunk := chunkStream.readChunk()
 		err := km.writeChunk(chunk)
 		if err != nil {
-			putChunkWriteStream(chunkStream)
+			freeChunkWriteStream(chunkStream)
 			return err
 		}
 	}
-	putChunkWriteStream(chunkStream)
+	freeChunkWriteStream(chunkStream)
 	return nil
 }
 func (km *km00001) writeChunk(chunk IChunk) error {
