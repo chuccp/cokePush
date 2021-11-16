@@ -7,7 +7,7 @@ type FileStream struct {
 }
 
 func NewFileStream(filePath string)(*FileStream,error)  {
-	file,err:=os.Create(filePath)
+	file,err:=os.OpenFile(filePath, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
 	return &FileStream{file:file},err
 }
 func( file *FileStream)Read(p []byte) (n int, err error){

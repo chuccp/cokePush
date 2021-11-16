@@ -18,13 +18,8 @@ func NewKm00001(io io.ReadWriter) *km00001 {
 	return &km00001{io: io}
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
-
-
-
-
-
-
-	return nil, nil
+	chunkStream := newChunkReadStream(km.io)
+	return chunkStream.readMessage()
 }
 func (km *km00001) WriteMessage(msg message.IMessage) error {
 	chunkStream := newChunkWriteStream(msg)

@@ -76,8 +76,8 @@ func U32TOBytes(i uint32) []byte {
 }
 func U16TOBytes(i uint16) []byte {
 	b := []byte{0, 0}
-	b[0] = byte(i)
-	b[1] = byte(i >> 8)
+	b[1] = byte(i)
+	b[0] = byte(i >> 8)
 	return b
 }
 func BytesTOU16(data []byte) uint16{

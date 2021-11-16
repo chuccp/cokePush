@@ -35,7 +35,7 @@ type Message struct {
 }
 
 func NewMessage() *Message {
-	return &Message{}
+	return &Message{data: make(map[byte][]byte)}
 }
 func CreateMessage() *Message {
 	return &Message{messageId: msgId(), time: millisecond(), keys: make([]byte, 0), data: make(map[byte][]byte)}
