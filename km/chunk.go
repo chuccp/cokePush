@@ -190,14 +190,14 @@ type chunkWriteStream struct {
 	maxBodySize uint32
 }
 
-var chunkId uint16 = 0
+var countChunkId uint16 = 0
 var lock = new(sync.Mutex)
 
 func getChunkId() uint16 {
 	lock.Lock()
 	defer lock.Unlock()
-	chunkId = chunkId + 4
-	return chunkId >> 2
+	countChunkId = countChunkId + 4
+	return countChunkId >> 2
 }
 
 func newChunkWriteStream(message message.IMessage) *chunkWriteStream {
@@ -275,7 +275,7 @@ type chunkReadStream struct {
 func newChunkReadStream(read_ io.Reader) *chunkReadStream {
 	return &chunkReadStream{read_: net.NewIOReadStream(read_), recordMap: make(map[uint16]*chunkRecord), maxBodySize: 512}
 }
-func (stream *chunkReadStream) InitChunkRecord(chunk *chunk0) {
+func (stream *chunkReadStream) InitChunkRecord(chunkId uint16,chunk *chunk0) {
 	msg := message.NewMessage()
 	msg.SetClassId(chunk.classId)
 	msg.SetMessageType(chunk.messageType)
@@ -354,8 +354,8 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 	data, err := stream.read_.ReadBytes(2)
 	if err == nil {
 		ck := createChunkHeader2(data)
+		chunkId := ck.chunkId()
 		if ck.chunkType() == 0 {
-			//chunk0 := newChunk0(ck)
 			chunk0 := getPoolChunk0(ck)
 			data, err = stream.read_.ReadBytes(10)
 			chunk0.classId = data[0]
@@ -363,20 +363,21 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 			chunk0.time = util.U32BE(data[2:6])
 			chunk0.messageId = util.U32BE(data[6:10])
 			chunk0.messageLength, err = stream.readMessageLength()
-			stream.InitChunkRecord(chunk0)
+			stream.InitChunkRecord(chunkId,chunk0)
 			if err == nil {
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
 					chunk0.dataLen, err = stream.readMessageLength()
-					stream.SetDataLength(chunk0.chunkId(), chunk0.dataLen)
+
+					stream.SetDataLength(chunkId, chunk0.dataLen)
 					if err == nil {
 						if chunk0.dataLen <= stream.maxBodySize {
 							chunk0.data, err = stream.read_.ReadUintBytes(chunk0.dataLen)
 						} else {
 							chunk0.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
 						}
-						fa := stream.putChunk0(chunk0.chunkId(), chunk0)
-						chunkId := chunk0.chunkId()
+						fa := stream.putChunk0(chunkId, chunk0)
+
 						putPoolChunk0(chunk0)
 						return chunkId, fa, nil
 					}
@@ -388,15 +389,14 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 			chunk1.key, err = stream.read_.ReadByte()
 			if err == nil {
 				chunk1.dataLen, err = stream.readMessageLength()
-				stream.SetDataLength(chunk1.chunkId(), chunk1.dataLen)
+				stream.SetDataLength(chunkId, chunk1.dataLen)
 				if err == nil {
 					if chunk1.dataLen <= stream.maxBodySize {
 						chunk1.data, err = stream.read_.ReadUintBytes(chunk1.dataLen)
 					} else {
 						chunk1.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
 					}
-					fa := stream.putChunk1(chunk1.chunkId(), chunk1)
-					chunkId := chunk1.chunkId()
+					fa := stream.putChunk1(chunkId, chunk1)
 					putPoolChunk1(chunk1)
 					return chunkId, fa, nil
 				}
@@ -407,14 +407,12 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 			dataLen := stream.GetRDataLength(chunk2.chunkId())
 			if dataLen > stream.maxBodySize {
 				chunk2.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
-				fa := stream.putChunk2(chunk2.chunkId(), chunk2)
-				chunkId := chunk2.chunkId()
+				fa := stream.putChunk2(chunkId, chunk2)
 				putPoolChunk2(chunk2)
 				return chunkId, fa, nil
 			} else {
 				chunk2.data, err = stream.read_.ReadUintBytes(dataLen)
-				fa := stream.putChunk2(chunk2.chunkId(), chunk2)
-				chunkId := chunk2.chunkId()
+				fa := stream.putChunk2(chunkId, chunk2)
 				putPoolChunk2(chunk2)
 				return chunkId, fa, nil
 			}
