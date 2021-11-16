@@ -12,13 +12,12 @@ import (
 */
 func TestStream_WriteMessage(t *testing.T) {
 
-
-
+	fs, err := util.NewFileStream("D:\\attach\\bb.bin")
 	time1 := time.Now()
 	var i = 0
-	for ; i < 1; i++ {
-		fs, err := util.NewFileStream("D:\\attach\\bb.bin")
-		if err == nil {
+	if err == nil {
+		for ; i < 1000000; i++ {
+			fs.Seek(0)
 			k := NewKm00001(fs)
 			msg, err := k.ReadMessage()
 			if err == nil {

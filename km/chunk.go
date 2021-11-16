@@ -368,7 +368,6 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
 					chunk0.dataLen, err = stream.readMessageLength()
-
 					stream.SetDataLength(chunkId, chunk0.dataLen)
 					if err == nil {
 						if chunk0.dataLen <= stream.maxBodySize {
