@@ -252,15 +252,13 @@ func (stream *chunkWriteStream) readChunk() IChunk {
 		stream.rdataLenTemp = 0
 		stream.keyIndex++
 	}
-
 	start := stream.rdataLenTemp
 	end := start + stream.maxBodySize
-	if end > stream.dataLenTemp-start {
+	if end > stream.dataLenTemp {
 		end = stream.dataLenTemp
 	}
 	stream.rdataLenTemp = end
 	stream.rMessageLength = stream.rMessageLength + end - start
-
 	if stream.process == 0 {
 
 		chunk := createChunk0(stream.chunkId, stream.message.GetClassId(), stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
@@ -361,6 +359,7 @@ func (stream *chunkReadStream) putChunk1(chunkId uint16, chunk *chunk1) bool {
 }
 func (stream *chunkReadStream) putChunk2(chunkId uint16, chunk *chunk2) bool {
 	chunkRecord := stream.recordMap[chunkId]
+	chunkRecord.rDataLength = chunkRecord.rDataLength + uint32(len(chunk.data))
 	chunkRecord.data = append(chunkRecord.data, chunk.data...)
 	if chunkRecord.dataLength == chunkRecord.rDataLength {
 		chunkRecord.msg.SetValue(chunkRecord.key, chunkRecord.data)

@@ -13,6 +13,8 @@ type IMessage interface {
 	GetMessageType() byte
 	GetClassId() byte
 	GetValue(key byte) []byte
+	GetString(key byte)string
+
 	GetKeys() []byte
 	SetString(key byte, value string)
 	SetValue(key byte, value []byte)
