@@ -27,3 +27,7 @@ func AddUser(iUser IUser) {
 func Range(f func(iUser IUser) bool) {
 
 }
+
+func GetUser(username string)IUser  {
+	return nil
+}

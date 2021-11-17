@@ -22,10 +22,9 @@ func (messageDock *MessageDock) handleMessage(iMessage message.IMessage) {
 
 }
 func (messageDock *MessageDock) basicMessage(iMessage message.IMessage) {
-
-	//toUser:=iMessage.GetString(message.ToUser)
-
-
+	toUser:=iMessage.GetString(message.ToUser)
+	iu:=user.GetUser(toUser)
+	iu.WriteMessage(iMessage)
 }
 func (messageDock *MessageDock) groupMessage(iMessage message.IMessage) {
 
@@ -49,7 +48,7 @@ func (function *FunctionDock) handleFunction(iMessage message.IMessage,iUser use
 	case message.LoginType:
 		function.handleLogin(iMessage,iUser)
 	case message.JoinGroupType:
-		function.JoinGroup(iMessage,iUser)
+		function.joinGroup(iMessage,iUser)
 	}
 }
 
@@ -58,7 +57,7 @@ func (function *FunctionDock) handleLogin(iMessage message.IMessage,iUser user.I
 	iUser.SetUsername(username)
 	user.AddUser(iUser)
 }
-func (function *FunctionDock) JoinGroup(iMessage message.IMessage,iUser user.IUser) {
+func (function *FunctionDock) joinGroup(iMessage message.IMessage,iUser user.IUser) {
 	groupId:=iMessage.GetString(message.GroupId)
 	user.JoinGroup(groupId,iUser)
 }
