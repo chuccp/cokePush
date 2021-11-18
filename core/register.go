@@ -1,10 +1,13 @@
 package core
 
-import "sync"
+import (
+	"sync"
+)
 
 type Register struct {
 	servers *sync.Map
 	apiServer Server
+
 }
 
 func (register *Register) AddServer(server Server) {

@@ -8,26 +8,17 @@ type IUser interface {
 	WriteMessage(iMessage message.IMessage) error
 }
 type User struct {
-	username string
-	write    message.Write
+	Username string
+	Write    message.Write
 }
 
 func (u *User) SetUsername(username string) {
-	u.username = username
+	u.Username = username
 }
 func (u *User) GetUsername() string {
-	return u.username
+	return u.Username
 }
 func (u *User) WriteMessage(iMessage message.IMessage) error {
-	return u.write.WriteMessage(iMessage)
-}
-func AddUser(iUser IUser) {
-
-}
-func Range(f func(iUser IUser) bool) {
-
+	return u.Write.WriteMessage(iMessage)
 }
 
-func GetUser(username string)IUser  {
-	return nil
-}
