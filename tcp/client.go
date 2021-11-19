@@ -1,7 +1,6 @@
 package tcp
 
 import (
-	"github.com/chuccp/cokePush/dock"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
@@ -27,8 +26,8 @@ func (client *Client)handleMessage(msg message.IMessage){
 	switch msg.GetClassId() {
 	case message.OrdinaryMessageClass:
 		msg.SetString(message.FromUser, client.user.GetUsername())
-		dock.OnMessage(msg)
+
 	case message.FunctionMessageClass:
-		dock.OnFunction(msg, client.user)
+
 	}
 }

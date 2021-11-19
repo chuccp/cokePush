@@ -2,6 +2,7 @@ package tcp
 
 import (
 	"github.com/chuccp/cokePush/config"
+	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
 )
@@ -12,10 +13,10 @@ type Server struct {
 	port int
 	userStore *user.Store
 }
-func (server *Server) Init() {
+func (server *Server) Init(context *core.Context) {
 	server.port = server.config.GetIntOrDefault("tcp.server.port", 6464)
 	server.tcpserver =net.NewTCPServer(server.port)
-	server.userStore = user.NewStore()
+	server.userStore = context.UserStore
 }
 func (server *Server) Start() error{
 	err:=server.tcpserver.Bind()

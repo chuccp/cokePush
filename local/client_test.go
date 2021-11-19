@@ -16,16 +16,23 @@ func WriteMessage(iMessage message.IMessage)error  {
 
 func TestEqual(t *testing.T) {
 
-	u:=NewUser("222222",WriteMessage)
-	client:=newClient(u)
-	bm := message.CreateBasicMessage("222222","222222" , "444444")
-	client.handleMessage(bm)
+
+	//client:=newClient(u)
+	//bm := message.CreateBasicMessage("222222","222222" , "444444")
+	//client.handleMessage(bm)
 
 }
 func TestServer(t *testing.T) {
 	var defaultRegister = core.NewRegister()
-    defaultRegister.AddServer(NewServer())
+	server:=NewServer()
+    defaultRegister.AddServer(server)
 	cokePush:=defaultRegister.Create()
 	cokePush.StartSync()
+	u:=NewUser("222222",WriteMessage)
+	bm := message.CreateBasicMessage("222222","222222" , "444444")
+	client:=server.CreateClient(u)
+	client.login()
+	client.handleMessage(bm)
+
 
 }
