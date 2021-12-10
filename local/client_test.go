@@ -29,10 +29,15 @@ func TestServer(t *testing.T) {
 	cokePush:=defaultRegister.Create()
 	cokePush.StartSync()
 	u:=NewUser("222222",WriteMessage)
-	bm := message.CreateBasicMessage("222222","222222" , "444444")
+	bm := message.CreateBasicMessage("222222","222222" , "!!!!!!!!!!!!!")
 	client:=server.CreateClient(u)
 	client.login()
-	client.handleMessage(bm)
+	err:=client.handleMessage(bm)
+	if err!=nil{
+		t.Log(err)
+	}else{
+		t.Log("haha")
+	}
 
 
 }

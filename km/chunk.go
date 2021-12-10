@@ -124,7 +124,7 @@ func (chunk0 chunk0) toByte() []byte {
 }
 
 func lengthToBytes(length uint32) []byte {
-	if length < 32_767 {
+	if length <= 32_767 {
 		b := []byte{0, 0}
 		b[1] = byte(length)
 		b[0] = byte(length >> 8)

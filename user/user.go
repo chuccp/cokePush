@@ -1,6 +1,8 @@
 package user
 
-import "github.com/chuccp/cokePush/message"
+import (
+	"github.com/chuccp/cokePush/message"
+)
 
 type IUser interface {
 	SetUsername(username string)

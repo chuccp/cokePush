@@ -12,6 +12,9 @@ const (
 	// BroadcastMessageType 广播信息，给所有人发信息
 	BroadcastMessageType byte= 4
 
+
+
+
 	FromUser byte= 1
 	ToUser byte= 2
 	Text   byte= 3
