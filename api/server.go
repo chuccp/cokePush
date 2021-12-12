@@ -2,6 +2,7 @@ package api
 
 import (
 	"github.com/chuccp/cokePush/config"
+	"github.com/chuccp/cokePush/core"
 	"net/http"
 	"strconv"
 )
@@ -24,7 +25,7 @@ func (server *Server) Start() error {
 	error := srv.ListenAndServe()
 	return error
 }
-func (server *Server) Init() {
+func (server *Server) Init(context *core.Context) {
 	server.port = server.config.GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/",server.root)
 }

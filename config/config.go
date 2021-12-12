@@ -15,7 +15,6 @@ type Config struct {
 var defaultConfig = &Config{lock: new(sync.RWMutex)}
 
 func DefaultConfig() *Config {
-
 	return defaultConfig
 }
 func LoadFile(fileName string, charset properties.Encoding) (*Config, error) {
