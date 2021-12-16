@@ -3,8 +3,8 @@ package net
 import "net"
 
 type TCPServer struct {
-	listener     *net.TCPListener
-	port int
+	listener *net.TCPListener
+	port     int
 }
 
 func NewTCPServer(port int) *TCPServer {
@@ -16,17 +16,17 @@ func (server *TCPServer) Bind() error {
 		IP:   net.IPv4zero,
 		Port: server.port,
 	})
-	if err==nil{
+	if err == nil {
 		server.listener = listener
 	}
 	return err
 }
 
-func (server *TCPServer) Accept() (*IONetStream,error) {
+func (server *TCPServer) Accept() (*IONetStream, error) {
 	tcn, err := server.listener.AcceptTCP()
-	if err==nil{
+	if err == nil {
 		stream := NewIOStream(tcn)
-		return stream,err
+		return stream, err
 	}
-	return nil,err
+	return nil, err
 }

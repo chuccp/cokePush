@@ -5,7 +5,6 @@ import (
 	"io"
 )
 
-
 type km interface {
 	ReadMessage() (message.IMessage, error)
 	WriteMessage(msg message.IMessage) error
@@ -20,7 +19,7 @@ func NewKm00001(io io.ReadWriter) *km00001 {
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
 	chunkStream := createChunkReadStream(km.io)
-	msg,err:= chunkStream.readMessage()
+	msg, err := chunkStream.readMessage()
 	freeChunkReadStream(chunkStream)
 	return msg, err
 }
@@ -38,8 +37,6 @@ func (km *km00001) WriteMessage(msg message.IMessage) error {
 	return nil
 }
 func (km *km00001) writeChunk(chunk IChunk) error {
-	_,err:=km.io.Write(chunk.toByte())
+	_, err := km.io.Write(chunk.toByte())
 	return err
 }
-
-

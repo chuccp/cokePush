@@ -8,40 +8,41 @@ import (
 )
 
 type Server struct {
-	config   *config.Config
+	config    *config.Config
 	tcpserver *net.TCPServer
-	port int
+	port      int
 	userStore *user.Store
 }
+
 func (server *Server) Init(context *core.Context) {
 	server.port = server.config.GetIntOrDefault("tcp.server.port", 6464)
-	server.tcpserver =net.NewTCPServer(server.port)
+	server.tcpserver = net.NewTCPServer(server.port)
 	server.userStore = context.UserStore
 }
-func (server *Server) Start() error{
-	err:=server.tcpserver.Bind()
-	if err!=nil{
+func (server *Server) Start() error {
+	err := server.tcpserver.Bind()
+	if err != nil {
 		return err
-	}else{
+	} else {
 		go server.AcceptConn()
 	}
 	return nil
 }
 
-func (server *Server) AcceptConn(){
-	for{
-		io,err:=server.tcpserver.Accept()
-		if err!=nil{
+func (server *Server) AcceptConn() {
+	for {
+		io, err := server.tcpserver.Accept()
+		if err != nil {
 			break
-		}else{
-			client, err :=NewClient(io)
-			if err ==nil{
+		} else {
+			client, err := NewClient(io)
+			if err == nil {
 				go client.Start()
 			}
 		}
 	}
 }
-func (server *Server)Name()string  {
+func (server *Server) Name() string {
 
 	return "TCP"
 }

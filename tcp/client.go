@@ -18,11 +18,11 @@ func NewClient(stream *net.IONetStream) (*Client, error) {
 
 func (client *Client) Start() {
 	msg, err := client.stream.ReadMessage()
-	if err!=nil{
+	if err != nil {
 		client.handleMessage(msg)
 	}
 }
-func (client *Client)handleMessage(msg message.IMessage){
+func (client *Client) handleMessage(msg message.IMessage) {
 	switch msg.GetClassId() {
 	case message.OrdinaryMessageClass:
 		msg.SetString(message.FromUser, client.user.GetUsername())

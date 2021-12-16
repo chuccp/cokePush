@@ -5,11 +5,11 @@ type Store struct {
 }
 
 func NewStore() *Store {
-	return &Store{masterMap:newIndexMap()}
+	return &Store{masterMap: newIndexMap()}
 }
-func (store *Store)AddUser(user IUser)  {
+func (store *Store) AddUser(user IUser) {
 	store.masterMap.add(user)
 }
-func (store *Store)GetUser(username string) IUser {
+func (store *Store) GetUser(username string) IUser {
 	return store.masterMap.get(username)
 }

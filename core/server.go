@@ -1,9 +1,7 @@
 package core
 
 type Server interface {
-	Start()error
+	Start() error
 	Init(context *Context)
-	Name()string
+	Name() string
 }
-
-

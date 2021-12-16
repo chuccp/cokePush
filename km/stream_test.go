@@ -35,7 +35,7 @@ func TestStream_WriteMessage(t *testing.T) {
 }
 func TestStream_ReadMessage(t *testing.T) {
 
-	bm := message.CreateBasicMessage("333333","2222222" , "444444")
+	bm := message.CreateBasicMessage("333333", "2222222", "444444")
 
 	fs, err := util.NewFileStream("D:\\attach\\bb.bin")
 	time1 := time.Now()

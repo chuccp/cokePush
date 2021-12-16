@@ -12,17 +12,17 @@ func NewServer() *Server {
 	return &Server{}
 }
 
-func (server *Server)Start()error{
+func (server *Server) Start() error {
 	return nil
 }
-func (server *Server)Init(context *core.Context){
+func (server *Server) Init(context *core.Context) {
 	server.context = context
 }
 
-func(server *Server)CreateClient(user *User)*Client{
-	return newClient(user,server.context)
+func (server *Server) CreateClient(user *User) *Client {
+	return newClient(user, server.context)
 }
 
-func (server *Server)Name()string{
+func (server *Server) Name() string {
 	return "local"
 }

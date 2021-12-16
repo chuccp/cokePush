@@ -23,4 +23,3 @@ func (u *User) GetUsername() string {
 func (u *User) WriteMessage(iMessage message.IMessage) error {
 	return u.Write.WriteMessage(iMessage)
 }
-

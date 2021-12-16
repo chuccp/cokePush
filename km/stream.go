@@ -11,7 +11,7 @@ var code []byte = []byte{'c', 'o', 'k', 'e'}
 type Stream struct {
 	io        *net.IONetStream
 	chunkSize int
-	km km
+	km        km
 }
 
 func NewStream(io *net.IONetStream) (*Stream, error) {
@@ -50,10 +50,10 @@ func (stream *Stream) verify() error {
 
 	return err
 }
-func (stream *Stream) ReadMessage() (message.IMessage,error) {
-	 return stream.km.ReadMessage()
+func (stream *Stream) ReadMessage() (message.IMessage, error) {
+	return stream.km.ReadMessage()
 }
-func (stream *Stream) WriteMessage(msg message.IMessage)error {
+func (stream *Stream) WriteMessage(msg message.IMessage) error {
 	return stream.km.WriteMessage(msg)
 }
 

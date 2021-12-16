@@ -20,8 +20,8 @@ func newContext() *Context {
 }
 
 func (context *Context) SendMessage(iMessage message.IMessage) error {
-	iUser:=context.GetUser(iMessage.GetString(message.ToUser))
-	if iUser==nil{
+	iUser := context.GetUser(iMessage.GetString(message.ToUser))
+	if iUser == nil {
 		return NoFoundUser
 	}
 	return iUser.WriteMessage(iMessage)

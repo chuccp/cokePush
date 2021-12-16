@@ -8,10 +8,11 @@ import (
 )
 
 type IOReadStream struct {
-	read_         *bufio.Reader
+	read_ *bufio.Reader
 }
+
 func NewIOReadStream(read io.Reader) *IOReadStream {
-	return &IOReadStream{read_:bufio.NewReader(read)}
+	return &IOReadStream{read_: bufio.NewReader(read)}
 }
 
 func (stream *IOReadStream) ReadLine() ([]byte, error) {
@@ -67,18 +68,18 @@ func (stream *IOReadStream) ReadByte() (byte, error) {
 	return stream.read_.ReadByte()
 }
 
-
-
 type IOWriteStream struct {
-	write_        *bufio.Writer
+	write_ *bufio.Writer
 }
+
 func NewIOWriteStream(write io.Writer) *IOWriteStream {
-	return &IOWriteStream{write_:bufio.NewWriter(write)}
+	return &IOWriteStream{write_: bufio.NewWriter(write)}
 }
 
 func (stream *IOWriteStream) Write(data []byte) (int, error) {
 	return stream.write_.Write(data)
 }
+
 type IONetStream struct {
 	*net.TCPConn
 	*IOReadStream
@@ -93,7 +94,7 @@ func NewIOStream(conn *net.TCPConn) *IONetStream {
 	return sm
 }
 func (stream *IONetStream) GetLocalAddress() *net.TCPAddr {
-	if stream.LocalAddr()==nil{
+	if stream.LocalAddr() == nil {
 		return nil
 	}
 	return stream.LocalAddr().(*net.TCPAddr)

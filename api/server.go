@@ -10,7 +10,7 @@ import (
 type Server struct {
 	serveMux *http.ServeMux
 	config   *config.Config
-	port int
+	port     int
 }
 
 func (server *Server) root(w http.ResponseWriter, re *http.Request) {
@@ -27,16 +27,16 @@ func (server *Server) Start() error {
 }
 func (server *Server) Init(context *core.Context) {
 	server.port = server.config.GetIntOrDefault("rest.server.port", 8080)
-	server.AddRoute("/",server.root)
+	server.AddRoute("/", server.root)
 }
 
-func (server *Server)Name()string {
+func (server *Server) Name() string {
 	return "api"
 }
 
 func (server *Server) AddRoute(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	server.serveMux.HandleFunc(pattern, handler)
 }
-func NewServer(config   *config.Config) *Server {
-	return &Server{serveMux:http.NewServeMux(),config:config}
+func NewServer(config *config.Config) *Server {
+	return &Server{serveMux: http.NewServeMux(), config: config}
 }

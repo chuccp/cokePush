@@ -33,7 +33,7 @@ func init() {
 	}}
 
 }
-func createChunkWriteStreamPool(msg message.IMessage)*chunkWriteStream  {
+func createChunkWriteStreamPool(msg message.IMessage) *chunkWriteStream {
 	var chunkWriteStream = chunkWriteStreamPool.Get().(*chunkWriteStream)
 	chunkWriteStream.maxBodySize = 512
 	chunkWriteStream.chunkId = getChunkId()
@@ -44,21 +44,19 @@ func createChunkWriteStreamPool(msg message.IMessage)*chunkWriteStream  {
 	chunkWriteStream.rMessageLength = 0
 	return chunkWriteStream
 }
-func createChunkReadStream(read_ io.Reader)* chunkReadStream {
+func createChunkReadStream(read_ io.Reader) *chunkReadStream {
 	var chunkReadStream = chunkReadStreamPool.Get().(*chunkReadStream)
 	chunkReadStream.read_ = net.NewIOReadStream(read_)
 	chunkReadStream.maxBodySize = 512
 	chunkReadStream.recordMap = make(map[uint16]*chunkRecord)
 	return chunkReadStream
 }
-func freeChunkWriteStream(crm * chunkWriteStream )  {
+func freeChunkWriteStream(crm *chunkWriteStream) {
 	chunkWriteStreamPool.Put(crm)
 }
-func freeChunkReadStream(crm * chunkReadStream )  {
+func freeChunkReadStream(crm *chunkReadStream) {
 	chunkReadStreamPool.Put(crm)
 }
-
-
 
 func createPoolChunk0(chunk *chunk) *chunk0 {
 	var chk = (chunk0Pool.Get()).(*chunk0)
@@ -309,7 +307,7 @@ type chunkReadStream struct {
 func newChunkReadStream(read_ io.Reader) *chunkReadStream {
 	return &chunkReadStream{read_: net.NewIOReadStream(read_), recordMap: make(map[uint16]*chunkRecord), maxBodySize: 512}
 }
-func (stream *chunkReadStream) InitChunkRecord(chunkId uint16,chunk *chunk0) {
+func (stream *chunkReadStream) InitChunkRecord(chunkId uint16, chunk *chunk0) {
 	msg := message.NewMessage()
 	msg.SetClassId(chunk.classId)
 	msg.SetMessageType(chunk.messageType)
@@ -398,7 +396,7 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 			chunk0.time = util.U32BE(data[2:6])
 			chunk0.messageId = util.U32BE(data[6:10])
 			chunk0.messageLength, err = stream.readMessageLength()
-			stream.InitChunkRecord(chunkId,chunk0)
+			stream.InitChunkRecord(chunkId, chunk0)
 			if err == nil {
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
