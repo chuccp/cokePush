@@ -2,7 +2,6 @@ package ukm
 
 import (
 	"io"
-	"log"
 	"net"
 	"strconv"
 )
@@ -33,7 +32,6 @@ func (kmListener *KmListener) AcceptConn() (*KMConn, error) {
 	data := make([]byte, 1460)
 	for {
 		num, addr, err := kmListener.conn.ReadFromUDP(data)
-		log.Println(string(data[:num]))
 		if err == nil {
 			kn, fa := kmListener.getConn(addr, kmListener.conn.LocalAddr())
 			if fa {

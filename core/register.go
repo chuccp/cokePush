@@ -1,20 +1,19 @@
 package core
 
 import (
+	log "github.com/chuccp/coke-log"
+	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 type Register struct {
 	servers   *sync.Map
-	apiServer Server
 }
 
 func (register *Register) AddServer(server Server) {
-	if server.Name() == "api" {
-		register.apiServer = server
-	} else {
-		register.servers.LoadOrStore(server.Name(), server)
-	}
+	register.servers.LoadOrStore(server.Name(), server)
 }
 func (register *Register) Create() *CokePush {
 	return &CokePush{register: register, context: newContext()}
@@ -34,26 +33,22 @@ func (cokePush *CokePush) Start() {
 		server, ok := value.(Server)
 		if ok {
 			server.Init(cokePush.context)
-			go server.Start()
+			var err error
+			go func() {
+				log.InfoF("启动 {} 服务",server.Name())
+				err=server.Start()
+				if err!=nil{
+					log.ErrorF("启动 {} 服务失败 {}",server.Name(),err.Error())
+				}
+			}()
 		}
 		return ok
 	})
-	if cokePush.register.apiServer != nil {
-		cokePush.register.apiServer.Init(cokePush.context)
-		go cokePush.register.apiServer.Start()
-	}
+
 }
 func (cokePush *CokePush) StartSync() {
-	cokePush.register.servers.Range(func(key, value interface{}) bool {
-		server, ok := value.(Server)
-		if ok {
-			server.Init(cokePush.context)
-			go server.Start()
-		}
-		return ok
-	})
-	if cokePush.register.apiServer != nil {
-		cokePush.register.apiServer.Init(cokePush.context)
-		cokePush.register.apiServer.Start()
-	}
+	cokePush.Start()
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGBUS)
+	<-sig
 }

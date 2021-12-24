@@ -1,2 +1,8 @@
+github.com/chuccp/coke-log v0.0.0-20211224051055-236c63a98759 h1:s4+5uwwhxkidooRn0yCbG7cFXRigyXY+0Rrm/JksDWo=
+github.com/chuccp/coke-log v0.0.0-20211224051055-236c63a98759/go.mod h1:vcmaA7lRRZ/bqD8y5B67/2+bsAsBj+Cs7A3dmyNDv6s=
+github.com/chuccp/coke-log v0.0.0-20211224071330-408436f0f52c h1:ua9a6h4qHGZhuLsFZeu1IMWfoKDpDClpvkBORo4idKA=
+github.com/chuccp/coke-log v0.0.0-20211224071330-408436f0f52c/go.mod h1:vcmaA7lRRZ/bqD8y5B67/2+bsAsBj+Cs7A3dmyNDv6s=
 github.com/magiconair/properties v1.8.5 h1:b6kJs+EmPFMYGkow9GiUyCyOvIwYetYJ3fSaWak/Gls=
 github.com/magiconair/properties v1.8.5/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
+github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7 h1:xoIK0ctDddBMnc74udxJYBqlo9Ylnsp1waqjLsnef20=
+github.com/pquerna/ffjson v0.0.0-20190930134022-aa0246cd15f7/go.mod h1:YARuvh7BUWHNhzDq2OM5tzR2RiCcN2D7sapiKyCel/M=
