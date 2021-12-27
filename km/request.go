@@ -5,6 +5,7 @@ import (
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"github.com/chuccp/cokePush/util"
 	"strconv"
 	"sync"
 	"time"
@@ -82,7 +83,9 @@ func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
 func (conn *conn) getStatus() int {
 	return conn.status
 }
+func (conn *conn) close() {
 
+}
 func (conn *conn) start() error {
 	conn.status = CREATING
 	c := net.NewXConn(conn.host, conn.port)
@@ -146,37 +149,64 @@ func newConn(host string, port int) *conn {
 
 type Request struct {
 	connMap *sync.Map
-	rLock   *sync.RWMutex
+	rLock   *util.MapLock
 }
 
 func NewRequest() *Request {
-	return &Request{connMap: new(sync.Map), rLock: new(sync.RWMutex)}
+	return &Request{connMap: new(sync.Map), rLock: util.NewMapLock()}
 }
 func (request *Request) getConn(host string, port int) (*conn, error) {
 	key := strconv.Itoa(port) + host
-	request.rLock.RLock()
 	val, ok := request.connMap.Load(key)
 	if ok {
 		conn := val.(*conn)
-		if conn.getStatus() == CONNING {
-			return conn, nil
-		} else if conn.getStatus() == NEW {
-			cn := newConn(host, port)
-			return cn, nil
-		} else if conn.getStatus() == BREAK {
-			cn := newConn(host, port)
-			return cn, nil
-		} else if conn.getStatus() == CREATING {
-			return nil, nil
-		}
+		request.connStatus(conn, key, host, port)
 	} else {
-		cn := newConn(host, port)
-		request.connMap.Store(key, cn)
-		return cn, nil
+		request.rLock.Lock(key)
+		val, ok := request.connMap.Load(key)
+		if ok {
+			request.rLock.UnLock(key)
+			conn := val.(*conn)
+			return request.connStatus(conn, key, host, port)
+		} else {
+			nn, err := request.newConn(key, host, port)
+			request.rLock.UnLock(key)
+			return nn, err
+		}
+
 	}
 	return nil, nil
 }
-func (request *Request) Call(host string, port int, message message.IMessage) (*message.IMessage, error) {
 
-	return nil, nil
+func (request *Request) connStatus(conn *conn, key string, host string, port int) (*conn, error) {
+	if conn.getStatus() == CONNING {
+		return conn, nil
+	} else if conn.getStatus() == NEW {
+		return request.newConn(key, host, port)
+	} else if conn.getStatus() == BREAK {
+		return request.newConn(key, host, port)
+	} else if conn.getStatus() == CREATING {
+		return nil, core.ConnOnCreating
+	}
+	return nil, core.UnKnownConn
+}
+
+func (request *Request) newConn(key string, host string, port int) (*conn, error) {
+	cn := newConn(host, port)
+	err := cn.start()
+	if err != nil {
+		return nil, err
+	}
+	request.connMap.Store(key, cn)
+	return cn, nil
+}
+
+func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage, error) {
+
+	rq, err := request.getConn(host, port)
+	if err != nil {
+		return nil, err
+	} else {
+		return rq.write(message)
+	}
 }
