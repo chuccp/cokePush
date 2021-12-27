@@ -160,7 +160,7 @@ func (request *Request) getConn(host string, port int) (*conn, error) {
 	val, ok := request.connMap.Load(key)
 	if ok {
 		conn := val.(*conn)
-		request.connStatus(conn, key, host, port)
+		return  request.connStatus(conn, key, host, port)
 	} else {
 		request.rLock.Lock(key)
 		val, ok := request.connMap.Load(key)
@@ -173,7 +173,6 @@ func (request *Request) getConn(host string, port int) (*conn, error) {
 			request.rLock.UnLock(key)
 			return nn, err
 		}
-
 	}
 	return nil, nil
 }
@@ -181,23 +180,38 @@ func (request *Request) getConn(host string, port int) (*conn, error) {
 func (request *Request) connStatus(conn *conn, key string, host string, port int) (*conn, error) {
 	if conn.getStatus() == CONNING {
 		return conn, nil
-	} else if conn.getStatus() == NEW {
-		return request.newConn(key, host, port)
-	} else if conn.getStatus() == BREAK {
-		return request.newConn(key, host, port)
-	} else if conn.getStatus() == CREATING {
+	}
+	if conn.getStatus() == CREATING {
 		return nil, core.ConnOnCreating
 	}
+	if conn.getStatus() == NEW ||conn.getStatus() == BREAK{
+		request.rLock.Lock(key)
+		if conn.getStatus() == CONNING {
+			request.rLock.UnLock(key)
+			return conn, nil
+		}
+		if conn.getStatus() == CREATING {
+			request.rLock.UnLock(key)
+			return nil, core.ConnOnCreating
+		}
+		if conn.getStatus() == NEW ||conn.getStatus() == BREAK{
+			cnn,err:= request.newConn(key, host, port)
+			request.rLock.UnLock(key)
+			return cnn,err
+		}
+		request.rLock.UnLock(key)
+	}
+	request.rLock.UnLock(key)
 	return nil, core.UnKnownConn
 }
 
 func (request *Request) newConn(key string, host string, port int) (*conn, error) {
 	cn := newConn(host, port)
+	request.connMap.Store(key, cn)
 	err := cn.start()
 	if err != nil {
 		return nil, err
 	}
-	request.connMap.Store(key, cn)
 	return cn, nil
 }
 
