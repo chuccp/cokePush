@@ -11,3 +11,12 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 	bm.SetString(Text, messageText)
 	return bm
 }
+
+type LiveMessage struct {
+	*Message
+}
+
+func CreateLiveMessage()*LiveMessage  {
+	bm := &LiveMessage{Message: CreateMessage(LiveMessageClass, BlankLiveType)}
+	return bm
+}

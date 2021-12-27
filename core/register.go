@@ -29,6 +29,9 @@ type CokePush struct {
 }
 
 func (cokePush *CokePush) Start() {
+
+	cokePush.context.Init()
+
 	cokePush.register.servers.Range(func(key, value interface{}) bool {
 		server, ok := value.(Server)
 		if ok {

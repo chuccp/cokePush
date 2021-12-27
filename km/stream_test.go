@@ -47,3 +47,16 @@ func TestStream_ReadMessage(t *testing.T) {
 
 	t.Log(time2.Sub(time1))
 }
+func Test_chan(t *testing.T)  {
+	bm := message.CreateBasicMessage("333333", "2222222", "444444")
+	m:=newMessageQ(bm)
+	go func() {
+		time.Sleep(time.Second*2)
+		m.fa<-true
+	}()
+
+	t.Log(<-m.fa)
+
+
+
+}

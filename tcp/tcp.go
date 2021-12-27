@@ -23,9 +23,8 @@ func (server *Server) Start() error {
 	err := server.tcpserver.Bind()
 	if err != nil {
 		return err
-	} else {
-		go server.AcceptConn()
 	}
+	go server.AcceptConn()
 	return nil
 }
 
