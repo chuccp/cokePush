@@ -25,8 +25,8 @@ func newQueryMachineInfo(localPort int,machineId string)*queryMachineMessage  {
 	return bm
 }
 
-func backQueryMachine(data []byte)*queryMachineMessage  {
-	bm := &queryMachineMessage{Message: message.CreateMessage(message.BackMessageClass, message.BackMessageOKType)}
+func backQueryMachine(data []byte,msgId uint32)*queryMachineMessage  {
+	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageOKType,msgId)}
 	bm.SetValue(message.BackMachineAddress,data)
 	return bm
 }

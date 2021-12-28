@@ -1,7 +1,6 @@
 package km
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"io"
 )
@@ -25,7 +24,6 @@ func (km *km00001) ReadMessage() (message.IMessage, error) {
 	return msg, err
 }
 func (km *km00001) WriteMessage(msg message.IMessage) error {
-	log.DebugF("WriteMessage 写入信息class:{} type:{} msgId:{}",msg.GetClassId(),msg.GetMessageType(),msg.GetMessageId())
 	chunkStream := createChunkWriteStreamPool(msg)
 	for chunkStream.hasNext() {
 		chunk := chunkStream.readChunk()

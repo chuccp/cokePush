@@ -46,7 +46,7 @@ func (client *Client) handleMessage(msg message.IMessage) {
 				}
 			}
 			data := toBytes(client.server.port, client.server.machineId)
-			msg := backQueryMachine(data)
+			msg := backQueryMachine(data,msg.GetMessageId())
 			client.stream.WriteMessage(msg)
 		} else if messageType == message.QueryMachineType {
 			rAddress := msg.GetString(message.LocalMachineAddress)
@@ -68,7 +68,7 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			buff.WriteString(client.server.machineId)
 			data:=buff.Bytes()
 			log.DebugF("发送数据：{}",string(data))
-			msg := backQueryMachine(data)
+			msg := backQueryMachine(data,msg.GetMessageId())
 			client.stream.WriteMessage(msg)
 
 		}

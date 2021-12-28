@@ -40,7 +40,10 @@ func NewMessage() *Message {
 	return &Message{data: make(map[byte][]byte)}
 }
 func CreateMessage(classId byte, messageType byte) *Message {
-	return &Message{messageId: MsgId(), time: millisecond(), classId: classId, messageType: messageType, keys: make([]byte, 0), data: make(map[byte][]byte)}
+	return CreateBackMessage(classId,messageType,MsgId())
+}
+func CreateBackMessage(classId byte, messageType byte,msgId uint32) *Message {
+	return &Message{messageId: msgId, time: millisecond(), classId: classId, messageType: messageType, keys: make([]byte, 0), data: make(map[byte][]byte)}
 }
 func (message *Message) GetMessageId() uint32 {
 	return message.messageId
