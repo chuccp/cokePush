@@ -26,7 +26,9 @@ var poolChan = &sync.Pool{
 
 func getMessageQ(msg message.IMessage) *messageQ {
 	fa := poolChan.Get()
-	return &messageQ{writeMsg: msg, fa: fa.(chan bool)}
+	t:=time.Now()
+	t = t.Add(time.Second*5)
+	return &messageQ{writeMsg: msg, fa: fa.(chan bool),createTime: t,isWait:true,rLock:new(sync.RWMutex)}
 }
 func freeMessageQ(msg *messageQ) {
 	poolChan.Put(msg.fa)
@@ -35,22 +37,38 @@ func freeMessageQ(msg *messageQ) {
 type messageQ struct {
 	writeMsg message.IMessage
 	readMsg  message.IMessage
+	createTime time.Time
+	isWait   bool
 	fa       chan bool
+	rLock *sync.RWMutex
 }
 
-func newMessageQ(msg message.IMessage) *messageQ {
-	return &messageQ{writeMsg: msg, fa: make(chan bool)}
-}
+
 func (q *messageQ) wait() (message.IMessage, bool) {
 	return q.readMsg, <-q.fa
 }
 
 func (q *messageQ) notify(msg message.IMessage) {
-	q.readMsg = msg
-	q.fa <- true
+	if !q.isWait{
+		return}
+	q.rLock.Lock()
+	defer q.rLock.Unlock()
+	if q.isWait{
+		q.isWait = false
+		q.readMsg = msg
+		q.fa <- true
+	}
+
 }
 func (q *messageQ) close() {
-	q.fa <- false
+	if !q.isWait{
+		return}
+	q.rLock.Lock()
+	defer q.rLock.Unlock()
+	if q.isWait{
+		q.isWait = false
+		q.fa <- false
+	}
 }
 
 type conn struct {
@@ -67,8 +85,15 @@ func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
 		return nil, core.MessageIdIsBlank
 	} else {
 		msgQ := getMessageQ(iMessage)
-		conn.msgChanMap.Store(msgId, iMessage)
+		conn.msgChanMap.Store(msgId, msgQ)
+		err:=conn.stream.WriteMessage(iMessage)
+		if err!=nil{
+			conn.msgChanMap.Delete(msgId)
+			freeMessageQ(msgQ)
+			return nil, err
+		}
 		msg, fa := msgQ.wait()
+		conn.msgChanMap.Delete(msgId)
 		freeMessageQ(msgQ)
 		if fa {
 			return msg, nil
@@ -83,8 +108,12 @@ func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
 func (conn *conn) getStatus() int {
 	return conn.status
 }
-func (conn *conn) close() {
-
+func (conn *conn) Close() {
+	conn.stream.close(0)
+	conn.msgChanMap.Range(func(key, value interface{}) bool {
+		value.(*messageQ).close()
+		return true
+	})
 }
 func (conn *conn) start() error {
 	conn.status = CREATING
@@ -96,6 +125,7 @@ func (conn *conn) start() error {
 	} else {
 		conn.stream, err = NewClientStream(sm)
 		if err == nil {
+			go conn.closeTimeOutMessage()
 			go conn.read()
 			go conn.live()
 			conn.status = CONNING
@@ -105,6 +135,9 @@ func (conn *conn) start() error {
 		return err
 	}
 }
+/**
+读取信息
+ */
 func (conn *conn) read() {
 	for {
 		msg, err := conn.stream.ReadMessage()
@@ -121,6 +154,9 @@ func (conn *conn) read() {
 				} else {
 					log.InfoF("读取到超时反馈信息 classId:{} msgId:{}", classId, msgId)
 				}
+			}else{
+				log.DebugF("读取到心跳反馈信息 classId:{}", classId)
+
 			}
 		} else {
 			break
@@ -141,6 +177,23 @@ func (conn *conn) live() {
 		time.Sleep(time.Minute * 10)
 	}
 	conn.status = BREAK
+}
+/**
+关掉超时消息
+ */
+func (conn *conn)closeTimeOutMessage()  {
+	for conn.status == CONNING {
+		time.Sleep(time.Second * 5)
+		t:=time.Now()
+		conn.msgChanMap.Range(func(key, value interface{}) bool {
+			mq:=value.(*messageQ)
+			if t.After(mq.createTime){
+				mq.close()
+			}
+			return true
+		})
+	}
+	
 }
 
 func newConn(host string, port int) *conn {
@@ -215,12 +268,13 @@ func (request *Request) newConn(key string, host string, port int) (*conn, error
 	return cn, nil
 }
 
-func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage, error) {
+func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage,*conn, error) {
 
 	rq, err := request.getConn(host, port)
 	if err != nil {
-		return nil, err
+		return nil, rq,err
 	} else {
-		return rq.write(message)
+		msg,err:=rq.write(message)
+		return msg,rq,err
 	}
 }

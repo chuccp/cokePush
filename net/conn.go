@@ -1,6 +1,7 @@
 package net
 
 import (
+	log "github.com/chuccp/coke-log"
 	"net"
 	"strconv"
 )
@@ -17,6 +18,7 @@ func NewXConn(host string, port int) *XConn {
 	return &XConn{port: port, host: host, addr: addr}
 }
 func (x *XConn) Create() (*IONetStream,error) {
+	log.InfoF("创建连接 {}",x.addr.String())
 	conn, err := net.DialTCP("tcp", nil, x.addr)
 	if err != nil {
 		return nil,err

@@ -79,6 +79,9 @@ func NewIOWriteStream(write io.Writer) *IOWriteStream {
 func (stream *IOWriteStream) Write(data []byte) (int, error) {
 	return stream.write_.Write(data)
 }
+func (stream *IOWriteStream) Flush() error {
+	return stream.write_.Flush()
+}
 
 type IONetStream struct {
 	*net.TCPConn
@@ -87,10 +90,10 @@ type IONetStream struct {
 	isManualClose bool
 }
 
-func NewIOStream(conn *net.TCPConn) *IONetStream {
-	var sm = &IONetStream{TCPConn: conn, isManualClose: false}
-	sm.read_ = bufio.NewReader(conn)
-	sm.write_ = bufio.NewWriter(conn)
+func NewIOStream(cnn *net.TCPConn) *IONetStream {
+	var sm *IONetStream= &IONetStream{TCPConn: cnn, isManualClose: false}
+	sm.IOWriteStream = NewIOWriteStream(cnn)
+	sm.IOReadStream = NewIOReadStream(cnn)
 	return sm
 }
 func (stream *IONetStream) GetLocalAddress() *net.TCPAddr {

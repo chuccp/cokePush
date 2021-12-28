@@ -30,9 +30,32 @@ const (
 	JoinGroupType byte = 2
 
 
+	QueryMachineType = 3
+
+	QueryMachineInfoType = 4
+
+	LocalMachineAddress = 1
+
+
 	// LiveMessageClass 心跳信息，用于心跳测试以及集群信息交流
 	LiveMessageClass byte = 3
 	//BlankLiveType 简单心跳检查，发送空包
 	BlankLiveType = 1
+
+
+	// BackMessageClass 返回消息
+	BackMessageClass byte = 4
+
+	// BackMessageOKType 返回成功
+	BackMessageOKType byte = 1
+
+	BackMachineAddress = 2
+
+	// BackMessageErrorType 返回异常
+	BackMessageErrorType byte = 2
+
+
+
+
 
 )

@@ -68,10 +68,22 @@ func U32LE(b []byte) (i uint32) {
 
 func U32TOBytes(i uint32) []byte {
 	b := []byte{0, 0, 0, 0}
+	b[3] = byte(i)
+	b[2] = byte(i >> 8)
+	b[1] = byte(i >> 16)
+	b[0] = byte(i >> 24)
+	return b
+}
+func I64TOBytes(i int64) []byte {
+	b := []byte{0, 0, 0, 0}
 	b[0] = byte(i)
 	b[1] = byte(i >> 8)
 	b[2] = byte(i >> 16)
 	b[3] = byte(i >> 24)
+	b[5] = byte(i >> 32)
+	b[6] = byte(i >> 40)
+	b[7] = byte(i >> 48)
+	b[8] = byte(i >> 56)
 	return b
 }
 func U16TOBytes(i uint16) []byte {

@@ -1,0 +1,1 @@
+go build -o cokePush.exe github.com/chuccp/cokePush

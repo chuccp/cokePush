@@ -326,6 +326,8 @@ func (stream *chunkReadStream) GetRDataLength(chunkId uint16) uint32 {
 func (stream *chunkReadStream) putChunk0(chunkId uint16, chunk *chunk0) bool {
 	chunkRecord := stream.recordMap[chunkId]
 	chunkRecord.rDataLength = chunkRecord.rDataLength + uint32(len(chunk.data))
+	chunkRecord.msg.SetMessageId(chunk.messageId)
+	chunkRecord.msg.SetTimestamp(chunk.time)
 	if chunkRecord.dataLength == chunkRecord.rDataLength {
 		chunkRecord.data = make([]byte, 0)
 		chunkRecord.msg.SetValue(chunk.key, chunk.data)

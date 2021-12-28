@@ -1,8 +1,10 @@
 package km
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/util"
+	"sync"
 	"testing"
 	"time"
 )
@@ -49,14 +51,31 @@ func TestStream_ReadMessage(t *testing.T) {
 }
 func Test_chan(t *testing.T)  {
 	bm := message.CreateBasicMessage("333333", "2222222", "444444")
-	m:=newMessageQ(bm)
+	m:=getMessageQ(bm)
+	fa:=true
 	go func() {
 		time.Sleep(time.Second*2)
-		m.fa<-true
+		for fa{
+			log.Info("=====1")
+			m.fa<-true
+		}
 	}()
 
+
 	t.Log(<-m.fa)
+	time.Sleep(time.Second)
+	fa = false
+	t.Log(m.fa)
+
+}
+func TestChan(t *testing.T)  {
 
 
-
+	var machineMap sync.Map
+	v,fa:=machineMap.LoadOrStore(1,1)
+	t.Log(v,fa)
+	v,fa=machineMap.LoadOrStore(1,1)
+	t.Log(v,fa)
+	v,fa=machineMap.LoadOrStore(1,1)
+	t.Log(v,fa)
 }
