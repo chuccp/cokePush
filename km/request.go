@@ -141,7 +141,7 @@ func (conn *Conn) start() error {
 读取信息
  */
 func (conn *Conn) read() {
-	for {
+	for conn.status == CONNING{
 		msg, err := conn.stream.ReadMessage()
 		if err == nil {
 			classId := msg.GetClassId()
@@ -185,6 +185,7 @@ func (conn *Conn) live() {
  */
 func (conn *Conn)closeTimeOutMessage()  {
 	for conn.status == CONNING {
+		log.DebugF("扫描过期消息=======")
 		time.Sleep(time.Second * 5)
 		t:=time.Now()
 		conn.msgChanMap.Range(func(key, value interface{}) bool {
@@ -195,7 +196,7 @@ func (conn *Conn)closeTimeOutMessage()  {
 			return true
 		})
 	}
-	
+	log.DebugF("扫描过期消息=======结束")
 }
 
 func newConn(host string, port int) *Conn {
