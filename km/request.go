@@ -71,7 +71,7 @@ func (q *messageQ) close() {
 	}
 }
 
-type conn struct {
+type Conn struct {
 	status     int
 	host       string
 	port       int
@@ -79,7 +79,7 @@ type conn struct {
 	msgChanMap *sync.Map
 }
 
-func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
+func (conn *Conn) write(iMessage message.IMessage) (message.IMessage, error) {
 	msgId := iMessage.GetMessageId()
 	if msgId == 0 {
 		return nil, core.MessageIdIsBlank
@@ -92,7 +92,9 @@ func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
 			freeMessageQ(msgQ)
 			return nil, err
 		}
+		log.DebugF("==========开始等待")
 		msg, fa := msgQ.wait()
+		log.DebugF("==========等待结束")
 		conn.msgChanMap.Delete(msgId)
 		freeMessageQ(msgQ)
 		if fa {
@@ -105,17 +107,17 @@ func (conn *conn) write(iMessage message.IMessage) (message.IMessage, error) {
 
 }
 
-func (conn *conn) getStatus() int {
+func (conn *Conn) getStatus() int {
 	return conn.status
 }
-func (conn *conn) Close() {
+func (conn *Conn) Close() {
 	conn.stream.close(0)
 	conn.msgChanMap.Range(func(key, value interface{}) bool {
 		value.(*messageQ).close()
 		return true
 	})
 }
-func (conn *conn) start() error {
+func (conn *Conn) start() error {
 	conn.status = CREATING
 	c := net.NewXConn(conn.host, conn.port)
 	sm, err := c.Create()
@@ -125,10 +127,10 @@ func (conn *conn) start() error {
 	} else {
 		conn.stream, err = NewClientStream(sm)
 		if err == nil {
+			conn.status = CONNING
 			go conn.closeTimeOutMessage()
 			go conn.read()
 			go conn.live()
-			conn.status = CONNING
 		} else {
 			conn.status = BREAK
 		}
@@ -138,7 +140,7 @@ func (conn *conn) start() error {
 /**
 读取信息
  */
-func (conn *conn) read() {
+func (conn *Conn) read() {
 	for {
 		msg, err := conn.stream.ReadMessage()
 		if err == nil {
@@ -166,7 +168,7 @@ func (conn *conn) read() {
 }
 
 /**心跳维持连接**/
-func (conn *conn) live() {
+func (conn *Conn) live() {
 
 	for conn.status == CONNING {
 		lm := message.CreateLiveMessage()
@@ -181,7 +183,7 @@ func (conn *conn) live() {
 /**
 关掉超时消息
  */
-func (conn *conn)closeTimeOutMessage()  {
+func (conn *Conn)closeTimeOutMessage()  {
 	for conn.status == CONNING {
 		time.Sleep(time.Second * 5)
 		t:=time.Now()
@@ -196,8 +198,8 @@ func (conn *conn)closeTimeOutMessage()  {
 	
 }
 
-func newConn(host string, port int) *conn {
-	return &conn{status: NEW, host: host, port: port, msgChanMap: new(sync.Map)}
+func newConn(host string, port int) *Conn {
+	return &Conn{status: NEW, host: host, port: port, msgChanMap: new(sync.Map)}
 }
 
 type Request struct {
@@ -208,18 +210,18 @@ type Request struct {
 func NewRequest() *Request {
 	return &Request{connMap: new(sync.Map), rLock: util.NewMapLock()}
 }
-func (request *Request) getConn(host string, port int) (*conn, error) {
+func (request *Request) getConn(host string, port int) (*Conn, error) {
 	key := strconv.Itoa(port) + host
 	val, ok := request.connMap.Load(key)
 	if ok {
-		conn := val.(*conn)
+		conn := val.(*Conn)
 		return  request.connStatus(conn, key, host, port)
 	} else {
 		request.rLock.Lock(key)
 		val, ok := request.connMap.Load(key)
 		if ok {
 			request.rLock.UnLock(key)
-			conn := val.(*conn)
+			conn := val.(*Conn)
 			return request.connStatus(conn, key, host, port)
 		} else {
 			nn, err := request.newConn(key, host, port)
@@ -230,7 +232,7 @@ func (request *Request) getConn(host string, port int) (*conn, error) {
 	return nil, nil
 }
 
-func (request *Request) connStatus(conn *conn, key string, host string, port int) (*conn, error) {
+func (request *Request) connStatus(conn *Conn, key string, host string, port int) (*Conn, error) {
 	if conn.getStatus() == CONNING {
 		return conn, nil
 	}
@@ -258,7 +260,7 @@ func (request *Request) connStatus(conn *conn, key string, host string, port int
 	return nil, core.UnKnownConn
 }
 
-func (request *Request) newConn(key string, host string, port int) (*conn, error) {
+func (request *Request) newConn(key string, host string, port int) (*Conn, error) {
 	cn := newConn(host, port)
 	request.connMap.Store(key, cn)
 	err := cn.start()
@@ -268,7 +270,7 @@ func (request *Request) newConn(key string, host string, port int) (*conn, error
 	return cn, nil
 }
 
-func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage,*conn, error) {
+func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage,*Conn, error) {
 
 	rq, err := request.getConn(host, port)
 	if err != nil {

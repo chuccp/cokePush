@@ -61,6 +61,10 @@ func (server *Server)machineInfo(value ...interface{})interface{}   {
 	server.machineMap.each(func(machineId string, machine *machine) bool {
 		var mi MachineInfo
 		mi.Address = machine.remoteHost+":"+strconv.Itoa(machine.remotePort)+"|"+machineId
+
+		log.TraceF("请求 host:{}，port:{}",machine.remoteHost,machine.remotePort)
+		server.queryMachineInfo1(machine.remoteHost,machine.remotePort)
+
 		mis = append(mis, mi)
 		return true
 	})
@@ -88,11 +92,26 @@ func (server *Server) queryMachine() {
 			server.getMachineList()
 		}
 		log.DebugF("===============111=============================")
-		time.Sleep(time.Minute)
+		time.Sleep(time.Second * 5)
 		log.DebugF("============================================")
 	}
 }
-
+func (server *Server) queryMachineInfo1(host string,port int)(*machine,*km.Conn,error){
+	qInfo := newQueryMachineInfo(server.port, server.machineId)
+	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qInfo.GetMessageId())
+	msg, conn, err := server.request.Call(host, port, qInfo)
+	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
+	if err==nil{
+		machine := msg.GetString(message.BackMachineAddress)
+		m, err := toMachine(machine)
+		if err==nil{
+			return m,conn,nil
+		}else{
+			return nil,nil,err
+		}
+	}
+	return nil,nil,err
+}
 /**客户端获取请求机器信息**/
 func (server *Server) queryMachineInfo() error {
 
@@ -137,6 +156,7 @@ func (server *Server) queryMachineInfo() error {
 func (server *Server) getMachineList() {
 	qMsg := newQueryMachineMessage(server.port, server.machineId)
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
+		log.ErrorF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost,remotePort)
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
 			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err.Error(),remoteHost,remotePort)
