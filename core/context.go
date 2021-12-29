@@ -6,10 +6,13 @@ import (
 	"github.com/chuccp/cokePush/user"
 )
 
+type registerHandle func(value ...interface{}) interface{}
+
 type Context struct {
-	UserStore *user.Store
-	sendMsg   *queue
-	writeMsg  *queue
+	UserStore     *user.Store
+	sendMsg       *queue
+	writeMsg      *queue
+	handleFuncMap map[string]registerHandle
 }
 
 func (context *Context) exchangeSendMsg() {
@@ -18,14 +21,14 @@ func (context *Context) exchangeSendMsg() {
 	for {
 		msg := context.sendMsg.poll()
 		if msg != nil {
-			userId:=msg.GetString(message.ToUser)
+			userId := msg.GetString(message.ToUser)
 			context.GetUser(msg.GetString(message.ToUser))
-			log.InfoF("信息发送:{}",userId)
+			log.InfoF("信息发送:{}", userId)
 		}
 		i++
-		if i>>10==1{
+		if i>>10 == 1 {
 			i = 0
-			log.InfoF("当前信息池剩下 :{} 未处理",context.sendMsg.Num())
+			log.InfoF("当前信息池剩下 :{} 未处理", context.sendMsg.Num())
 		}
 	}
 }
@@ -33,11 +36,19 @@ func (context *Context) exchangeSendMsg() {
 func (context *Context) AddUser(iUser user.IUser) {
 	context.UserStore.AddUser(iUser)
 }
+
+func (context *Context) RegisterHandle(handleName string, handle registerHandle) {
+	context.handleFuncMap[handleName] = handle
+}
+func (context *Context) GetHandle(handleName string)registerHandle {
+	return context.handleFuncMap[handleName]
+}
+
 func (context *Context) GetUser(username string) user.IUser {
 	return context.UserStore.GetUser(username)
 }
 func newContext() *Context {
-	return &Context{UserStore: user.NewStore(), sendMsg: newQueue(), writeMsg: newQueue()}
+	return &Context{UserStore: user.NewStore(), sendMsg: newQueue(), writeMsg: newQueue(), handleFuncMap: make(map[string]registerHandle)}
 }
 
 func (context *Context) SendMessage(iMessage message.IMessage) error {

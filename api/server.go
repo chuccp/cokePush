@@ -33,7 +33,16 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request){
 		w.Write([]byte(err.Error()))
 	}
 }
-
+func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request){
+	handle:=server.context.GetHandle("machineInfo")
+	if handle!=nil{
+		value:=handle()
+		data, _ := ffjson.Marshal(value)
+		w.Write(data)
+	}else{
+		w.Write([]byte("machineInfo not found"))
+	}
+}
 
 func (server *Server) Start() error {
 	srv := &http.Server{
@@ -48,6 +57,7 @@ func (server *Server) Init(context *core.Context) {
 	server.port = server.config.GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
+	server.AddRoute("/clusterInfo", server.clusterInfo)
 }
 
 func (server *Server) Name() string {

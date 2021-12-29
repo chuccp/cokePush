@@ -8,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -25,6 +26,9 @@ type Server struct {
 	machine    *machine
 	machineMap *machineStore
 	request    *km.Request
+}
+type MachineInfo struct {
+	Address string
 }
 
 func (server *Server) Start() error {
@@ -50,6 +54,21 @@ func (server *Server) AcceptConn() {
 		}
 	}
 }
+func (server *Server)machineInfo(value ...interface{})interface{}   {
+
+	mis:=make([]MachineInfo,0)
+
+	server.machineMap.each(func(machineId string, machine *machine) bool {
+		var mi MachineInfo
+		mi.Address = machine.remoteHost+":"+strconv.Itoa(machine.remotePort)+"|"+machineId
+		mis = append(mis, mi)
+		return true
+	})
+	var mi MachineInfo
+	mi.Address = "localhost"+":"+strconv.Itoa(server.port)+"|"+server.machineId
+	mis = append(mis, mi)
+	return mis
+}
 
 func (server *Server) queryMachine() {
 	var hasQuery = false
@@ -68,7 +87,9 @@ func (server *Server) queryMachine() {
 		if hasQuery {
 			server.getMachineList()
 		}
+		log.DebugF("===============111=============================")
 		time.Sleep(time.Minute)
+		log.DebugF("============================================")
 	}
 }
 
@@ -118,7 +139,7 @@ func (server *Server) getMachineList() {
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
-			log.ErrorF("getMachineList err:{}", err.Error())
+			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err.Error(),remoteHost,remotePort)
 		} else {
 			if message.BackMessageClass == msg.GetClassId() {
 				if message.BackMessageOKType == msg.GetMessageType() {
@@ -169,6 +190,7 @@ func (server *Server) Init(context *core.Context) {
 	server.machine = newMachine(remotePort, remoteHost)
 	server.tcpserver = net.NewTCPServer(server.port)
 	server.userStore = context.UserStore
+	context.RegisterHandle("machineInfo",server.machineInfo)
 }
 func (server *Server) Name() string {
 	return "cluster"
