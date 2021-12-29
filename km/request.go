@@ -112,6 +112,8 @@ func (conn *Conn) getStatus() int {
 }
 func (conn *Conn) Close() {
 	conn.stream.close(0)
+}
+func (conn *Conn)clear()  {
 	conn.msgChanMap.Range(func(key, value interface{}) bool {
 		value.(*messageQ).close()
 		return true
@@ -165,6 +167,7 @@ func (conn *Conn) read() {
 		}
 	}
 	conn.status = BREAK
+	conn.clear()
 }
 
 /**心跳维持连接**/
