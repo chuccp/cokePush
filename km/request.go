@@ -135,6 +135,7 @@ func (conn *Conn) start() error {
 			go conn.live()
 		} else {
 			conn.status = BREAK
+			conn.stream.close(0)
 		}
 		return err
 	}

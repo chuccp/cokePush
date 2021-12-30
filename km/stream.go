@@ -37,7 +37,7 @@ func (stream *Stream) init()error {
 }
 
 func (stream *Stream) shakeHandsClient() error{
-	log.Debug("客户端发送接收握手信息")
+
 	//写标识位
 	num,err:=stream.io.Write(code)
 	log.TraceF("shakeHandsClient 写入num:{}",num)
@@ -46,10 +46,17 @@ func (stream *Stream) shakeHandsClient() error{
 		if err==nil{
 			err=stream.io.Flush()
 			if err==nil{
-				stream.km = NewKm00001(stream.io)
-				return nil
+				ver, err := stream.io.ReadBytes(4)
+				if err!=nil{
+					return err
+				}
+				if util.Equal(ver, version) {
+					log.Debug("客户端握手成功")
+					stream.km = NewKm00001(stream.io)
+					return nil
+				}
 			}
-			return nil
+			return err
 		}
 	}
 	return err
@@ -66,8 +73,15 @@ func (stream *Stream) shakeHandsServer() error {
 			ver, err := stream.io.ReadBytes(4)
 			if err == nil {
 				if util.Equal(ver, version) {
-					log.Debug("服务端握手成功")
-					stream.km = NewKm00001(stream.io)
+					_,err=stream.io.Write(version)
+					err=stream.io.Flush()
+					if err==nil{
+						log.Debug("服务端握手成功")
+						stream.km = NewKm00001(stream.io)
+					}else{
+						return err
+					}
+
 				} else {
 					stream.close(0)
 				}

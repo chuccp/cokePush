@@ -4,7 +4,7 @@ import "sync"
 
 type indexMap struct {
 	uMap  *sync.Map
-	num   int
+	num   uint
 	rLock *sync.RWMutex
 }
 
@@ -19,6 +19,8 @@ func (index *indexMap) add(user IUser) bool {
 	index.rLock.Unlock()
 	return false
 }
+
+
 func (index *indexMap) get(username string) IUser {
 	index.rLock.RLock()
 	u, ok := index.uMap.Load(username)

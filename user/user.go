@@ -7,6 +7,7 @@ import (
 type IUser interface {
 	SetUsername(username string)
 	GetUsername() string
+	GetUserId() string
 	WriteMessage(iMessage message.IMessage) error
 }
 type User struct {
@@ -18,6 +19,9 @@ func (u *User) SetUsername(username string) {
 	u.Username = username
 }
 func (u *User) GetUsername() string {
+	return u.Username
+}
+func (u *User) GetUserId() string {
 	return u.Username
 }
 func (u *User) WriteMessage(iMessage message.IMessage) error {

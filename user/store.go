@@ -13,3 +13,6 @@ func (store *Store) AddUser(user IUser) {
 func (store *Store) GetUser(username string) IUser {
 	return store.masterMap.get(username)
 }
+func (store *Store) GetUserNum() uint {
+	return store.masterMap.num
+}

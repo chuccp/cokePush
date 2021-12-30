@@ -32,7 +32,9 @@ const (
 
 	QueryMachineType = 3
 
-	QueryMachineInfoType = 4
+	QueryMachineBasicType = 4
+
+	QueryMachineInfoType = 5
 
 	LocalMachineAddress = 1
 

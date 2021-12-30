@@ -26,9 +26,11 @@ type Server struct {
 	machine    *machine
 	machineMap *machineStore
 	request    *km.Request
+	context *core.Context
 }
 type MachineInfo struct {
 	Address string
+	UserNum uint
 }
 
 func (server *Server) Start() error {
@@ -63,13 +65,14 @@ func (server *Server)machineInfo(value ...interface{})interface{}   {
 		mi.Address = machine.remoteHost+":"+strconv.Itoa(machine.remotePort)+"|"+machineId
 
 		log.TraceF("请求 host:{}，port:{}",machine.remoteHost,machine.remotePort)
-		server.queryMachineInfo1(machine.remoteHost,machine.remotePort)
+		server.queryMachineBasic1(machine.remoteHost,machine.remotePort)
 
 		mis = append(mis, mi)
 		return true
 	})
 	var mi MachineInfo
 	mi.Address = "localhost"+":"+strconv.Itoa(server.port)+"|"+server.machineId
+	mi.UserNum = server.userStore.GetUserNum()
 	mis = append(mis, mi)
 	return mis
 }
@@ -80,26 +83,24 @@ func (server *Server) queryMachine() {
 		time.Sleep(time.Second * 2)
 		log.DebugF("查询机器信息 hasQuery:{} ", hasQuery)
 		if !hasQuery && !server.machine.isLocal {
-			err := server.queryMachineInfo()
+			err := server.queryMachineBasic()
 			log.DebugF("查询机器信息 hasQuery:{} ", hasQuery, err)
 			if err == nil {
 				hasQuery = true
 			} else {
-				log.ErrorF("queryMachineInfo err:{}", err.Error())
+				log.ErrorF("queryMachineInfo err:{}", err)
 			}
 		}
 		if hasQuery {
 			server.getMachineList()
 		}
-		log.DebugF("===============111=============================")
-		time.Sleep(time.Second * 5)
-		log.DebugF("============================================")
+		time.Sleep(time.Minute)
 	}
 }
-func (server *Server) queryMachineInfo1(host string,port int)(*machine,*km.Conn,error){
-	qInfo := newQueryMachineInfo(server.port, server.machineId)
-	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qInfo.GetMessageId())
-	msg, conn, err := server.request.Call(host, port, qInfo)
+func (server *Server) queryMachineBasic1(host string,port int)(*machine,*km.Conn,error){
+	qBasic := newQueryMachineBasic(server.port, server.machineId)
+	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
+	msg, conn, err := server.request.Call(host, port, qBasic)
 	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
 	if err==nil{
 		machine := msg.GetString(message.BackMachineAddress)
@@ -113,11 +114,11 @@ func (server *Server) queryMachineInfo1(host string,port int)(*machine,*km.Conn,
 	return nil,nil,err
 }
 /**客户端获取请求机器信息**/
-func (server *Server) queryMachineInfo() error {
+func (server *Server) queryMachineBasic() error {
 
-	qInfo := newQueryMachineInfo(server.port, server.machineId)
-	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qInfo.GetMessageId())
-	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qInfo)
+	qBasic := newQueryMachineBasic(server.port, server.machineId)
+	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
+	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qBasic)
 	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
 	if err == nil {
 		if message.BackMessageClass == msg.GetClassId() {
@@ -156,10 +157,10 @@ func (server *Server) queryMachineInfo() error {
 func (server *Server) getMachineList() {
 	qMsg := newQueryMachineMessage(server.port, server.machineId)
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
-		log.ErrorF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost,remotePort)
+		log.InfoF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost,remotePort)
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
-			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err.Error(),remoteHost,remotePort)
+			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err,remoteHost,remotePort)
 		} else {
 			if message.BackMessageClass == msg.GetClassId() {
 				if message.BackMessageOKType == msg.GetMessageType() {
@@ -170,7 +171,7 @@ func (server *Server) getMachineList() {
 							for _, v := range addresses {
 								m, err := toMachine(v)
 								if err != nil {
-									log.ErrorF("getMachineList 解析地址错误 GetMessageType:{}  err:{}", v, err.Error())
+									log.ErrorF("getMachineList 解析地址错误 GetMessageType:{}  err:{}", v, err)
 								} else {
 									if m.machineId == server.machineId {
 										m.isLocal = true
@@ -195,6 +196,7 @@ func (server *Server) getMachineList() {
 
 // Init 初始化
 func (server *Server) Init(context *core.Context) {
+	server.context = context
 	server.port = server.config.GetIntOrDefault("cluster.local.port", 6361)
 	server.machineId = server.config.GetStringOrDefault("cluster.local.machineId", MachineId())
 	if server.machineId == "" {

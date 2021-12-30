@@ -19,9 +19,14 @@ func newQueryMachineMessage(localPort int,machineId string)*queryMachineMessage 
 	bm.SetValue(message.LocalMachineAddress,toBytes(localPort,machineId))
 	return bm
 }
-func newQueryMachineInfo(localPort int,machineId string)*queryMachineMessage  {
-	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineInfoType)}
+func newQueryMachineBasic(localPort int,machineId string)*queryMachineMessage  {
+	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineBasicType)}
 	bm.SetValue(message.LocalMachineAddress,toBytes(localPort,machineId))
+	return bm
+}
+//获取集群信息
+func newQueryMachineInfo() message.IMessage {
+	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineInfoType)}
 	return bm
 }
 

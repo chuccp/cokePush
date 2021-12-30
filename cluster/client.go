@@ -27,22 +27,28 @@ func (client *Client) Start() {
 
 }
 // queryMachineInfoType 获取当前服务器信息
-func (client *Client)queryMachineInfoType(iMsg message.IMessage)  {
+func (client *Client)queryMachineBasicType(iMsg message.IMessage)  {
 	rAddress := iMsg.GetString(message.LocalMachineAddress)
-	log.DebugF("收到数据 queryMachineInfoType rAddress:{}  msgId:{}",rAddress,iMsg.GetMessageId())
+	log.DebugF("收到数据 queryMachineBasicType rAddress:{}  msgId:{}",rAddress,iMsg.GetMessageId())
 	m, err := toMachine(rAddress)
 	if err == nil {
 		addr := client.stream.RemoteAddr()
 		m.remoteHost = addr.IP.String()
 		if m.machineId != client.server.machineId {
 			if client.server.machineMap.add(m) {
-				log.InfoF("QueryMachineInfoType 添加新的机器连接 :{}|{}", addr.String(), m.machineId)
+				log.InfoF("queryMachineBasicType 添加新的机器连接 :{}|{}", addr.String(), m.machineId)
 			}
 		}
 	}
 	data := toBytes(client.server.port, client.server.machineId)
 	msg := backQueryMachine(data,iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
+}
+func (client *Client)queryMachineInfoType(iMsg message.IMessage){
+
+
+
+
 }
 // QueryMachineType 获取当前服务器集群列表
 func (client *Client)QueryMachineType(iMsg message.IMessage){
@@ -73,14 +79,19 @@ func (client *Client) handleMessage(msg message.IMessage) {
 	switch msg.GetClassId() {
 	case message.FunctionMessageClass:
 		messageType := msg.GetMessageType()
-		if messageType == message.QueryMachineInfoType {
-			client.queryMachineInfoType(msg)
+		if messageType == message.QueryMachineBasicType {
+			client.queryMachineBasicType(msg)
 		} else if messageType == message.QueryMachineType {
 			client.QueryMachineType(msg)
+		}else if messageType == message.QueryMachineInfoType{
+			client.queryMachineInfoType(msg)
 		}
 	case message.LiveMessageClass:
 		lm:=message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
+
+
+
 	}
 
 }
