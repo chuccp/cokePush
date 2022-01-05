@@ -13,7 +13,7 @@ func newUserStore() *userStore {
 	return &userStore{store: new(sync.Map)}
 }
 func (userStore *userStore) add(user IUser) (bool,int) {
-	_, fa := userStore.store.LoadOrStore(user.GetUserId(), user)
+	_, fa := userStore.store.LoadOrStore(user.GetId(), user)
 	if !fa {
 		userStore.num++
 		return true,userStore.num
@@ -21,7 +21,7 @@ func (userStore *userStore) add(user IUser) (bool,int) {
 	return false,userStore.num
 }
 func (userStore *userStore) delete(user IUser) (bool,int) {
-	id := user.GetUserId()
+	id := user.GetId()
 	_, fa := userStore.store.LoadAndDelete(id)
 	if fa {
 		userStore.num--

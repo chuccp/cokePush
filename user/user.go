@@ -8,6 +8,6 @@ type IUser interface {
 	WriteMessage(iMessage message.IMessage) error
 	ReadMessage() (message.IMessage,error)
 	Close()
-	GetUserId() string
+	GetId() string
 	GetUsername() string
 }

@@ -8,6 +8,7 @@ import (
 	"syscall"
 	"testing"
 	"time"
+	"unsafe"
 )
 
 func Test_time2(t *testing.T) {
@@ -58,4 +59,22 @@ func Test_time2(t *testing.T) {
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGBUS)
 	<-sig
+}
+
+type ttt struct {
+	ti *time.Time
+}
+
+func (ttt *ttt)tm() *time.Time {
+	return ttt.ti
+}
+func Test_time1(t *testing.T){
+
+	ti:=time.Now()
+	log.Info(unsafe.Pointer(&ti))
+
+	tt:=&ttt{ti:&ti}
+	tn:=tt.tm()
+	log.Info(unsafe.Pointer(&ti))
+	log.Info(unsafe.Pointer(tn))
 }

@@ -19,7 +19,6 @@ type store struct {
 
 func (store *store)jack(w http.ResponseWriter, re *http.Request)  {
 	userId:=util.GetUsername(re)
-	log.DebugF("{} 来了",userId)
 	v,ok:=store.clientMap.Load(userId)
 	if ok{
 		client:=v.(*client)
@@ -35,7 +34,12 @@ func (store *store)createUser(userId string,w http.ResponseWriter){
 	store.clientMap.Store(userId,client)
 	client.poll(w)
 }
+func (store *store)timeOutCheck(){
+	store.clientMap.Range(func(key, value interface{}) bool {
 
+		return true
+	})
+}
 func (store *store)sendMsg(w http.ResponseWriter, re *http.Request)  {
 
 }
@@ -48,10 +52,12 @@ type client struct {
 	context *core.Context
 	username string
 	userId string
+	intPut int
+	last *time.Time
 }
 
 func NewClient(context *core.Context,username string) *client {
-	c:= &client{queue: core.NewQueue(),context:context,username:username}
+	c:= &client{queue: core.NewQueue(),context:context,username:username,intPut:0}
 	c.userId = username+strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))),36)
 	return c
 }
@@ -59,16 +65,30 @@ func (client *client)HandleLogin(iMessage message.IMessage){
 	client.context.Handle(iMessage,client)
 }
 func (client *client)WriteMessage(iMessage message.IMessage) error{
+	log.DebugF("WriteMessage messageId",iMessage.GetMessageId())
 	client.queue.Offer(iMessage)
 	return nil
 }
 func (client *client)poll(w http.ResponseWriter) {
+	client.intPut++
 	msg:= client.queue.Poll(time.Second*20)
 	if msg!=nil{
 		w.Write(msg.GetValue(message.Text))
 	}
+	client.intPut--
+	if client.intPut==0{
+		t:=time.Now()
+		client.last = &t
+	}
 }
-func (client *client)GetUserId() string{
+func (client *client)getLastTime()*time.Time{
+	if client.intPut!=0{
+		return nil
+	}
+	return client.last
+}
+
+func (client *client)GetId() string{
 	return client.userId
 }
 func (client *client)GetUsername() string{

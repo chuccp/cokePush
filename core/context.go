@@ -18,8 +18,7 @@ func (context *Context) GetHandle(handleName string)registerHandle {
 	return context.handleFuncMap[handleName]
 }
 func (context *Context) SendMessage(msg message.IMessage)error {
-	//context.dock.handleMessage(msg,nil)
-	return nil
+	return context.dock.sendMessage(msg)
 }
 func (context *Context) Handle(msg message.IMessage,writeRead user.IUser)error{
 	 context.dock.handleMessage(msg,writeRead)
