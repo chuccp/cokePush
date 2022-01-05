@@ -1,5 +1,7 @@
 package user
 
+
+
 type Store struct {
 	masterMap *indexMap
 }
@@ -10,8 +12,8 @@ func NewStore() *Store {
 func (store *Store) AddUser(user IUser) {
 	store.masterMap.add(user)
 }
-func (store *Store) GetUser(username string) IUser {
-	return store.masterMap.get(username)
+func (store *Store) GetUser(username string,f func(IUser)bool) bool {
+	return store.masterMap.each(username,f)
 }
 func (store *Store) GetUserNum() uint {
 	return store.masterMap.num

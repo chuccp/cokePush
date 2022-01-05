@@ -5,25 +5,9 @@ import (
 )
 
 type IUser interface {
-	SetUsername(username string)
-	GetUsername() string
-	GetUserId() string
 	WriteMessage(iMessage message.IMessage) error
-}
-type User struct {
-	Username string
-	Write    message.Write
-}
-
-func (u *User) SetUsername(username string) {
-	u.Username = username
-}
-func (u *User) GetUsername() string {
-	return u.Username
-}
-func (u *User) GetUserId() string {
-	return u.Username
-}
-func (u *User) WriteMessage(iMessage message.IMessage) error {
-	return u.Write.WriteMessage(iMessage)
+	ReadMessage() (message.IMessage,error)
+	Close()
+	GetUserId() string
+	GetUsername() string
 }

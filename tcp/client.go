@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
@@ -8,26 +9,31 @@ import (
 
 type Client struct {
 	stream *km.Stream
-	user   *User
+	context *core.Context
 }
-
-func NewClient(stream *net.IONetStream) (*Client, error) {
+func NewClient(stream *net.IONetStream,context *core.Context) (*Client, error) {
 	kmStream, err := km.NewStream(stream)
-	return &Client{stream: kmStream, user: NewUser()}, err
+	return &Client{stream: kmStream,context:context }, err
 }
-
 func (client *Client) Start() {
 	msg, err := client.stream.ReadMessage()
 	if err != nil {
-		client.handleMessage(msg)
+		client.context.Handle(msg,client)
 	}
 }
-func (client *Client) handleMessage(msg message.IMessage) {
-	switch msg.GetClassId() {
-	case message.OrdinaryMessageClass:
-		msg.SetString(message.FromUser, client.user.GetUsername())
+func (client *Client)WriteMessage(iMessage message.IMessage) error{
+	return client.stream.WriteMessage(iMessage)
+}
+func (client *Client)ReadMessage() (message.IMessage,error){
+	return client.stream.ReadMessage()
+}
+func (client *Client)GetUserId() string{
 
-	case message.FunctionMessageClass:
+	return ""
+}
+func (client *Client)GetUsername() string{
+	return ""
+}
+func (client *Client) Close() {
 
-	}
 }

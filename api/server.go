@@ -58,12 +58,24 @@ func (server *Server) Init(context *core.Context) {
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
+	context.RegisterHandle("AddRoute",server.addRoute)
 }
 
 func (server *Server) Name() string {
 	return "api"
 }
+func (server *Server) addRoute(value ...interface{})interface{} {
 
+	pattern,ok:=value[0].(string)
+	if ok{
+		handler,ok:=value[1].(func(http.ResponseWriter, *http.Request))
+		if ok{
+			server.serveMux.HandleFunc(pattern,handler)
+			return nil
+		}
+	}
+	return http.ErrAbortHandler
+}
 func (server *Server) AddRoute(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	server.serveMux.HandleFunc(pattern, handler)
 }

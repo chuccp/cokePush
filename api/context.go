@@ -1,5 +1,5 @@
 package api
 
 const (
-	VERSION             = "version"
+	VERSION   = "version"
 )

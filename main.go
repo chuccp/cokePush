@@ -6,6 +6,7 @@ import (
 	"github.com/chuccp/cokePush/cluster"
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
+	"github.com/chuccp/cokePush/ex"
 	clog "github.com/chuccp/cokePush/log"
 	"github.com/magiconair/properties"
 )
@@ -16,6 +17,7 @@ func DefaultRegister() *core.Register {
 		var defaultRegister = core.NewRegister()
 		defaultRegister.AddServer(api.NewServer(config))
 		defaultRegister.AddServer(cluster.NewServer(config))
+		defaultRegister.AddServer(ex.NewServer(config))
 		return defaultRegister
 	}else{
 		log.PanicF("加载配置文件失败：{}",err.Error())

@@ -11,6 +11,14 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 	bm.SetString(Text, messageText)
 	return bm
 }
+type LoginMessage struct {
+	*Message
+}
+func CreateLoginMessage(username string)*LoginMessage  {
+	bm := &LoginMessage{Message: CreateMessage(FunctionMessageClass, LoginType)}
+	bm.SetString(Username, username)
+	return bm
+}
 
 type LiveMessage struct {
 	*Message

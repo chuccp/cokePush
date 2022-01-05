@@ -211,7 +211,6 @@ func (server *Server) Init(context *core.Context) {
 	server.machineMap = newMachineStore()
 	server.machine = newMachine(remotePort, remoteHost)
 	server.tcpserver = net.NewTCPServer(server.port)
-	server.userStore = context.UserStore
 	context.RegisterHandle("machineInfo",server.machineInfo)
 }
 func (server *Server) Name() string {

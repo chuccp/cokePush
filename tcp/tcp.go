@@ -4,20 +4,19 @@ import (
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/net"
-	"github.com/chuccp/cokePush/user"
 )
 
 type Server struct {
 	config    *config.Config
 	tcpserver *net.TCPServer
 	port      int
-	userStore *user.Store
+	context *core.Context
 }
 
 func (server *Server) Init(context *core.Context) {
+	server.context = context
 	server.port = server.config.GetIntOrDefault("tcp.server.port", 6464)
 	server.tcpserver = net.NewTCPServer(server.port)
-	server.userStore = context.UserStore
 }
 func (server *Server) Start() error {
 	err := server.tcpserver.Bind()
@@ -34,7 +33,7 @@ func (server *Server) AcceptConn() {
 		if err != nil {
 			break
 		} else {
-			client, err := NewClient(io)
+			client, err := NewClient(io,server.context)
 			if err == nil {
 				go client.Start()
 			}
