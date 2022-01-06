@@ -12,6 +12,11 @@ func NewStore() *Store {
 func (store *Store) AddUser(user IUser) {
 	store.masterMap.add(user)
 }
+
+func (store *Store) DeleteUser(user IUser)bool{
+	return store.masterMap.delete(user)
+}
+
 func (store *Store) GetUser(username string,f func(IUser)bool) bool {
 	return store.masterMap.each(username,f)
 }

@@ -41,6 +41,9 @@ func (dock *dock)login(iMessage message.IMessage, writeRead user.IUser){
 	log.DebugF("添加新用户 :{}",writeRead.GetUsername())
 	dock.UserStore.AddUser(writeRead)
 }
+func (dock *dock)DeleteUser(iUser user.IUser){
+
+}
 
 func (dock *dock) handleMessage(iMessage message.IMessage, writeRead user.IUser) {
 

@@ -17,6 +17,10 @@ func (context *Context) RegisterHandle(handleName string, handle registerHandle)
 func (context *Context) GetHandle(handleName string)registerHandle {
 	return context.handleFuncMap[handleName]
 }
+func (context *Context) DeleteUser(iUser user.IUser) {
+	context.dock.UserStore.DeleteUser(iUser)
+
+}
 func (context *Context) SendMessage(msg message.IMessage)error {
 	return context.dock.sendMessage(msg)
 }
