@@ -6,7 +6,6 @@ type MapLock struct {
 	lMap  map[string]*sync.RWMutex
 	rLock *sync.RWMutex
 }
-
 func NewMapLock() *MapLock {
 	return &MapLock{lMap: make(map[string]*sync.RWMutex), rLock: new(sync.RWMutex)}
 }

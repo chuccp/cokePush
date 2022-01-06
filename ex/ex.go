@@ -17,7 +17,7 @@ func (server *Server) Start() error {
 	handle := server.context.GetHandle("AddRoute")
 	if handle != nil {
 		err:=handle("/ex", server.ex)
-		err=handle("/sendMsg", server.sendMsg)
+		err=handle("/ex/sendMsg", server.sendMsg)
 		if err==nil{
 			go server.store.timeOutCheck()
 			log.InfoF("add ex route success")

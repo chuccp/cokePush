@@ -16,6 +16,7 @@ import (
 type store struct {
 	clientMap *sync.Map
 	context   *core.Context
+	rLock *sync.RWMutex
 }
 
 func (store *store) jack(w http.ResponseWriter, re *http.Request) {
@@ -23,7 +24,9 @@ func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 	v, ok := store.clientMap.Load(userId)
 	if ok {
 		client := v.(*client)
-		client.poll(w)
+		if !client.poll(w){
+			store.createUser(userId, w)
+		}
 	} else {
 		store.createUser(userId, w)
 	}
@@ -32,13 +35,23 @@ func (store *store) createUser(userId string, w http.ResponseWriter) {
 	client := NewClient(store.context, userId)
 	login := message.CreateLoginMessage(userId)
 	client.HandleLogin(login)
+	store.rLock.RLock()
 	store.clientMap.Store(userId, client)
+	store.rLock.RUnlock()
 	client.poll(w)
 }
-func (store *store) deleteUser(userId string,client *client) {
-	client.hasClose = true
-	store.clientMap.Delete(userId)
-	store.context.DeleteUser(client)
+func (store *store) deleteUser(userId string,c *client) {
+	c.close()
+	store.rLock.Lock()
+	v,ok:=store.clientMap.Load(userId)
+	if ok{
+		ci:=v.(*client)
+		if ci==c{
+			store.clientMap.Delete(userId)
+		}
+	}
+	store.rLock.Unlock()
+	store.context.DeleteUser(c)
 }
 func (store *store) timeOutCheck() {
 	for {
@@ -58,7 +71,7 @@ func (store *store) sendMsg(w http.ResponseWriter, re *http.Request) {
 
 }
 func newStore(context *core.Context) *store {
-	return &store{clientMap: new(sync.Map), context: context}
+	return &store{clientMap: new(sync.Map), context: context,rLock:new(sync.RWMutex)}
 }
 
 type client struct {
@@ -87,7 +100,18 @@ func (client *client) WriteMessage(iMessage message.IMessage) error {
 	client.queue.Offer(iMessage)
 	return nil
 }
-func (client *client) poll(w http.ResponseWriter) {
+func (client *client)close(){
+	client.hasClose = true
+}
+
+func (client *client)isClose() bool {
+	return client.hasClose
+}
+
+func (client *client) poll(w http.ResponseWriter) bool {
+	if client.hasClose{
+		return false
+	}
 	client.intPut++
 	msg := client.queue.Poll(time.Second * 20)
 	if msg != nil {
@@ -98,6 +122,7 @@ func (client *client) poll(w http.ResponseWriter) {
 		t := time.Now().Add(time.Second * 10)
 		client.last = &t
 	}
+	return true
 }
 func (client *client) timeOut(t *time.Time) bool {
 	if client.intPut == 0 {
