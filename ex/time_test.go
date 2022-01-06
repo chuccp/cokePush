@@ -78,3 +78,23 @@ func Test_time1(t *testing.T){
 	log.Info(unsafe.Pointer(&ti))
 	log.Info(unsafe.Pointer(tn))
 }
+func Test_time3(t *testing.T){
+
+	c:=make(chan bool)
+
+
+	go func() {
+
+		log.InfoF("========")
+		c<-true
+		log.InfoF("!!!!!")
+		c<-false
+		log.InfoF("=====")
+
+	}()
+	time.Sleep(time.Second*5)
+	log.InfoF("!!!!!!{}",<-c)
+	time.Sleep(time.Second*5)
+	//log.InfoF("!!!!!!{}",<-c)
+
+}
