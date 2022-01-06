@@ -102,7 +102,7 @@ func (client *client) poll(w http.ResponseWriter) {
 func (client *client) timeOut(t *time.Time) bool {
 	if client.intPut == 0 {
 		flag := client.last.Before(*t)
-		log.DebugF("{} 超时检查用户  timeOut:{} nowTime:{} 是否超时：{}", client.userId, client.last, t, flag)
+		log.DebugF("{} 超时检查用户  timeOut:{} nowTime:{} 是否超时：{}", client.username, client.last, t, flag)
 		return flag
 	}
 	return false
@@ -120,9 +120,9 @@ func (client *client) GetId() string {
 func (client *client) GetUsername() string {
 	return client.username
 }
+func (client *client)SetUsername(username string){
+	client.username = username
+}
 func (client *client) ReadMessage() (message.IMessage, error) {
 	return nil, nil
-}
-func (client *client) Close() {
-
 }

@@ -38,13 +38,17 @@ func (dock *dock) writeUserMsg(msg *messageChan) (bool, error) {
 	}), ee
 }
 func (dock *dock)login(iMessage message.IMessage, writeRead user.IUser){
+	writeRead.SetUsername(iMessage.GetString(message.Username))
 	log.DebugF("添加新用户 :{}",writeRead.GetUsername())
+	if writeRead.GetUsername()==""{
+		log.ErrorF("用户名不能为空")
+		return
+	}
 	dock.UserStore.AddUser(writeRead)
 }
 func (dock *dock)DeleteUser(iUser user.IUser){
-
+	dock.UserStore.DeleteUser(iUser)
 }
-
 func (dock *dock) handleMessage(iMessage message.IMessage, writeRead user.IUser) {
 
 	switch iMessage.GetClassId() {

@@ -5,35 +5,40 @@ import (
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"strconv"
+	"unsafe"
 )
 
-type Client struct {
+type client struct {
 	stream *km.Stream
 	context *core.Context
+	id string
+	username string
 }
-func NewClient(stream *net.IONetStream,context *core.Context) (*Client, error) {
+func NewClient(stream *net.IONetStream,context *core.Context) (*client, error) {
 	kmStream, err := km.NewStream(stream)
-	return &Client{stream: kmStream,context:context }, err
+	client:=&client{stream: kmStream,context:context }
+	return client, err
 }
-func (client *Client) Start() {
+func (client *client) Start() {
 	msg, err := client.stream.ReadMessage()
 	if err != nil {
 		client.context.Handle(msg,client)
 	}
 }
-func (client *Client)WriteMessage(iMessage message.IMessage) error{
+func (client *client)WriteMessage(iMessage message.IMessage) error{
 	return client.stream.WriteMessage(iMessage)
 }
-func (client *Client)ReadMessage() (message.IMessage,error){
+func (client *client)ReadMessage() (message.IMessage,error){
 	return client.stream.ReadMessage()
 }
-func (client *Client)GetUserId() string{
-
-	return ""
+func (client *client)GetId() string{
+	return client.id
 }
-func (client *Client)GetUsername() string{
-	return ""
+func (client *client)GetUsername() string{
+	return client.username
 }
-func (client *Client) Close() {
-
+func (client *client)SetUsername(username string){
+	client.username = username
+	client.id = username+strconv.FormatUint(uint64(uintptr(unsafe.Pointer(client))), 36)
 }

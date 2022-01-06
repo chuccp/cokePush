@@ -7,7 +7,7 @@ import (
 type IUser interface {
 	WriteMessage(iMessage message.IMessage) error
 	ReadMessage() (message.IMessage,error)
-	Close()
 	GetId() string
 	GetUsername() string
+	SetUsername(username string)
 }
