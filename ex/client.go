@@ -104,13 +104,13 @@ func (client *client) WriteMessage(iMessage message.IMessage) error {
 	return nil
 }
 func (client *client)close(t *time.Time)bool{
-	client.rLock.RLock()
+	client.rLock.Lock()
 	if client.timeOut(t){
 		client.hasClose = true
-		client.rLock.RUnlock()
+		client.rLock.Unlock()
 		return true
 	}
-	client.rLock.RUnlock()
+	client.rLock.Unlock()
 	return false
 }
 
@@ -119,24 +119,24 @@ func (client *client)isClose() bool {
 }
 
 func (client *client) poll(w http.ResponseWriter) bool {
-	client.rLock.Lock()
+	client.rLock.RLock()
 	if client.hasClose{
-		client.rLock.Unlock()
+		client.rLock.RUnlock()
 		return false
 	}
 	client.intPut++
-	client.rLock.Unlock()
+	client.rLock.RUnlock()
 	msg := client.queue.Poll(time.Second * 20)
 	if msg != nil {
 		w.Write(msg.GetValue(message.Text))
 	}
-	client.rLock.Lock()
+	client.rLock.RLock()
 	client.intPut--
 	if client.intPut == 0 {
 		t := time.Now().Add(time.Second * 10)
 		client.last = &t
 	}
-	client.rLock.Unlock()
+	client.rLock.RUnlock()
 	return true
 }
 func (client *client) timeOut(t *time.Time) bool {
