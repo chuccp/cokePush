@@ -2,15 +2,14 @@ package local
 
 import (
 	"github.com/chuccp/cokePush/message"
-	"github.com/chuccp/cokePush/user"
 )
 
 type User struct {
-	*user.User
+	//*user.User
 }
 
 func NewUser(username string, f func(iMessage message.IMessage) error) *User {
-	return &User{User: &user.User{Username: username, Write: newWrite(f)}}
+	return &User{}
 }
 
 type Write struct {

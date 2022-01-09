@@ -23,15 +23,20 @@ func (server *Server) root(w http.ResponseWriter, re *http.Request) {
 	data, _ := ffjson.Marshal(dm)
 	w.Write(data)
 }
+
+func (server *Server)WriteMessage(iMessage message.IMessage)error  {
+
+	return nil
+}
 func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request){
 	username:=util.GetUsername(re)
 	msg:=util.GetMessage(re)
-	err:=server.context.SendMessage(message.CreateBasicMessage("system",username,msg))
-	if err==nil{
-		w.Write([]byte("success"))
-	}else{
-		w.Write([]byte(err.Error()))
-	}
+	flag :=util.GetChanBool()
+	server.context.SendMessage(message.CreateBasicMessage("system",username,msg), func(iMessage message.IMessage,err error,u bool)  {
+		flag <-u
+	})
+	<-flag
+	util.FreeChanBool(flag)
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request){
 	handle:=server.context.GetHandle("machineInfo")

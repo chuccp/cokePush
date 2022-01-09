@@ -21,8 +21,8 @@ func (context *Context) DeleteUser(iUser user.IUser) {
 	context.dock.UserStore.DeleteUser(iUser)
 
 }
-func (context *Context) SendMessage(msg message.IMessage)error {
-	return context.dock.sendMessage(msg)
+func (context *Context) SendMessage(msg message.IMessage,write WriteFunc) {
+	 context.dock.sendMessage(msg,write)
 }
 func (context *Context) Handle(msg message.IMessage,writeRead user.IUser)error{
 	 context.dock.handleMessage(msg,writeRead)
