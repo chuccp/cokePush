@@ -14,7 +14,7 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 func (basic *BasicMessage)SetExMsgId(msgId string)  {
 	basic.SetString(ExMessageId, msgId)
 }
-func (basic *BasicMessage)GetExMsgId(msgId string)string  {
+func (basic *BasicMessage)GetExMsgId()string  {
 	return basic.GetString(ExMessageId)
 }
 type LoginMessage struct {
