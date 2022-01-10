@@ -12,7 +12,7 @@ import (
 type Server struct {
 	serveMux *http.ServeMux
 	port     int
-	context *core.Context
+	context  *core.Context
 }
 
 func (server *Server) root(w http.ResponseWriter, re *http.Request) {
@@ -22,34 +22,33 @@ func (server *Server) root(w http.ResponseWriter, re *http.Request) {
 	w.Write(data)
 }
 
-func (server *Server)WriteMessage(iMessage message.IMessage)error  {
+func (server *Server) WriteMessage(iMessage message.IMessage) error {
 
 	return nil
 }
-func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request){
-	username:=util.GetUsername(re)
-	msg:=util.GetMessage(re)
-	flag :=util.GetChanBool()
-	server.context.SendMessage(message.CreateBasicMessage("system",username,msg), func(iMessage message.IMessage,err error,u bool)  {
-		flag <-u
+func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
+	username := util.GetUsername(re)
+	msg := util.GetMessage(re)
+	flag := util.GetChanBool()
+	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(iMessage message.IMessage, err error, u bool) {
+		flag <- u
 	})
-	fa:=<-flag
+	fa := <-flag
 	util.FreeChanBool(flag)
-	if fa{
+	if fa {
 		w.Write([]byte("success"))
-	}else{
+	} else {
 		w.Write([]byte("NO user"))
 	}
 
-
 }
-func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request){
-	handle:=server.context.GetHandle("machineInfo")
-	if handle!=nil{
-		value:=handle()
+func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
+	handle := server.context.GetHandle("machineInfo")
+	if handle != nil {
+		value := handle()
 		data, _ := ffjson.Marshal(value)
 		w.Write(data)
-	}else{
+	} else {
 		w.Write([]byte("machineInfo not found"))
 	}
 }
@@ -64,27 +63,30 @@ func (server *Server) Start() error {
 }
 func (server *Server) Init(context *core.Context) {
 	server.context = context
-	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
+	if server.port < 0 {
+		server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
+	}
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
-	context.RegisterHandle("AddRoute",server.addRoute)
+	context.RegisterHandle("AddRoute", server.addRoute)
 }
 
 // SetPort 在start启动前处理，覆盖配置文件配置
-func (server *Server)SetPort(port int){
+func (server *Server) SetPort(port int)*Server {
 	server.port = port
+	return server
 }
 func (server *Server) Name() string {
 	return "api"
 }
-func (server *Server) addRoute(value ...interface{})interface{} {
+func (server *Server) addRoute(value ...interface{}) interface{} {
 
-	pattern,ok:=value[0].(string)
-	if ok{
-		handler,ok:=value[1].(func(http.ResponseWriter, *http.Request))
-		if ok{
-			server.serveMux.HandleFunc(pattern,handler)
+	pattern, ok := value[0].(string)
+	if ok {
+		handler, ok := value[1].(func(http.ResponseWriter, *http.Request))
+		if ok {
+			server.serveMux.HandleFunc(pattern, handler)
 			return nil
 		}
 	}
@@ -94,5 +96,5 @@ func (server *Server) AddRoute(pattern string, handler func(http.ResponseWriter,
 	server.serveMux.HandleFunc(pattern, handler)
 }
 func NewServer() *Server {
-	return &Server{serveMux: http.NewServeMux()}
+	return &Server{serveMux: http.NewServeMux(), port: -1}
 }
