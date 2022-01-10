@@ -12,7 +12,7 @@ type Config struct {
 	lock *sync.RWMutex
 }
 
-var defaultConfig = &Config{lock: new(sync.RWMutex)}
+var defaultConfig = &Config{lock: new(sync.RWMutex),data:make(map[string]string)}
 
 func DefaultConfig() *Config {
 	return defaultConfig

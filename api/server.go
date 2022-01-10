@@ -63,9 +63,7 @@ func (server *Server) Start() error {
 }
 func (server *Server) Init(context *core.Context) {
 	server.context = context
-	if server.port < 0 {
-		server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
-	}
+	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
