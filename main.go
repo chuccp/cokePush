@@ -14,10 +14,10 @@ import (
 func DefaultRegister() *core.Register {
 	config,err := config.LoadFile("application.properties",properties.UTF8)
 	if err==nil{
-		var defaultRegister = core.NewRegister()
-		defaultRegister.AddServer(api.NewServer(config))
-		defaultRegister.AddServer(cluster.NewServer(config))
-		defaultRegister.AddServer(ex.NewServer(config))
+		var defaultRegister = core.NewRegister(config)
+		defaultRegister.AddServer(api.NewServer())
+		defaultRegister.AddServer(cluster.NewServer())
+		defaultRegister.AddServer(ex.NewServer())
 		return defaultRegister
 	}else{
 		log.PanicF("加载配置文件失败：{}",err.Error())

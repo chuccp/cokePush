@@ -2,7 +2,6 @@ package cluster
 
 import (
 	log "github.com/chuccp/coke-log"
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
@@ -18,7 +17,6 @@ func newMachine(remotePort int, remoteHost string) *machine {
 }
 
 type Server struct {
-	config     *config.Config
 	port       int
 	machineId  string
 	tcpserver  *net.TCPServer
@@ -197,13 +195,13 @@ func (server *Server) getMachineList() {
 // Init 初始化
 func (server *Server) Init(context *core.Context) {
 	server.context = context
-	server.port = server.config.GetIntOrDefault("cluster.local.port", 6361)
-	server.machineId = server.config.GetStringOrDefault("cluster.local.machineId", MachineId())
+	server.port = context.GetConfig().GetIntOrDefault("cluster.local.port", 6361)
+	server.machineId = context.GetConfig().GetStringOrDefault("cluster.local.machineId", MachineId())
 	if server.machineId == "" {
 		log.PanicF("machineId can‘t blank")
 	}
-	var remotePort = server.config.GetIntOrDefault("cluster.remote.port", 6362)
-	var remoteHost = server.config.GetString("cluster.remote.host")
+	var remotePort = context.GetConfig().GetIntOrDefault("cluster.remote.port", 6362)
+	var remoteHost = context.GetConfig().GetString("cluster.remote.host")
 	if remoteHost == "" {
 		log.PanicF("cluster.remote.host can‘t blank")
 	}
@@ -217,6 +215,6 @@ func (server *Server) Name() string {
 	return "cluster"
 }
 
-func NewServer(config *config.Config) *Server {
-	return &Server{config: config}
+func NewServer() *Server {
+	return &Server{}
 }

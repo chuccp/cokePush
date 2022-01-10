@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/util"
@@ -12,7 +11,6 @@ import (
 
 type Server struct {
 	serveMux *http.ServeMux
-	config   *config.Config
 	port     int
 	context *core.Context
 }
@@ -66,7 +64,7 @@ func (server *Server) Start() error {
 }
 func (server *Server) Init(context *core.Context) {
 	server.context = context
-	server.port = server.config.GetIntOrDefault("rest.server.port", 8080)
+	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
@@ -95,6 +93,6 @@ func (server *Server) addRoute(value ...interface{})interface{} {
 func (server *Server) AddRoute(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	server.serveMux.HandleFunc(pattern, handler)
 }
-func NewServer(config *config.Config) *Server {
-	return &Server{serveMux: http.NewServeMux(), config: config}
+func NewServer() *Server {
+	return &Server{serveMux: http.NewServeMux()}
 }

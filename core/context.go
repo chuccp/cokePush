@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
 )
@@ -10,6 +11,7 @@ type registerHandle func(value ...interface{}) interface{}
 type Context struct {
 	handleFuncMap map[string]registerHandle
 	dock *dock
+	config *config.Config
 }
 func (context *Context) RegisterHandle(handleName string, handle registerHandle) {
 	context.handleFuncMap[handleName] = handle
@@ -17,6 +19,11 @@ func (context *Context) RegisterHandle(handleName string, handle registerHandle)
 func (context *Context) GetHandle(handleName string)registerHandle {
 	return context.handleFuncMap[handleName]
 }
+
+func (context *Context) GetConfig()*config.Config {
+	return context.config
+}
+
 func (context *Context) DeleteUser(iUser user.IUser) {
 	context.dock.UserStore.DeleteUser(iUser)
 
@@ -28,8 +35,8 @@ func (context *Context) Handle(msg message.IMessage,writeRead user.IUser)error{
 	 context.dock.handleMessage(msg,writeRead)
 	 return nil
 }
-func newContext() *Context {
-	return &Context{handleFuncMap: make(map[string]registerHandle),dock:newDock()}
+func newContext(config *config.Config) *Context {
+	return &Context{handleFuncMap: make(map[string]registerHandle),dock:newDock(),config:config}
 }
 func (context *Context) Init() {
 	go context.dock.exchangeSendMsg()

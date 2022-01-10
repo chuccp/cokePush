@@ -2,6 +2,7 @@ package core
 
 import (
 	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/cokePush/config"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,17 +11,18 @@ import (
 
 type Register struct {
 	servers   *sync.Map
+	context  *Context
 }
 
 func (register *Register) AddServer(server Server) {
+	server.Init(register.context)
 	register.servers.LoadOrStore(server.Name(), server)
 }
 func (register *Register) Create() *CokePush {
-	return &CokePush{register: register, context: newContext()}
+	return &CokePush{register: register,context:register.context }
 }
-func NewRegister() *Register {
-
-	return &Register{servers: new(sync.Map)}
+func NewRegister(config *config.Config) *Register {
+	return &Register{servers: new(sync.Map),context: newContext(config)}
 }
 
 type CokePush struct {
@@ -29,13 +31,10 @@ type CokePush struct {
 }
 
 func (cokePush *CokePush) Start() {
-
 	cokePush.context.Init()
-
 	cokePush.register.servers.Range(func(key, value interface{}) bool {
 		server, ok := value.(Server)
 		if ok {
-			server.Init(cokePush.context)
 			var err error
 			go func() {
 				log.InfoF("启动 {} 服务",server.Name())

@@ -44,6 +44,6 @@ func (server *Server) sendMsg(w http.ResponseWriter, re *http.Request) {
 func (server *Server) Name() string {
 	return "ex"
 }
-func NewServer(config *config.Config) *Server {
-	return &Server{config:config}
+func NewServer() *Server {
+	return &Server{}
 }
