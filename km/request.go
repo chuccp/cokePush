@@ -189,6 +189,7 @@ func (conn *Conn) read() {
 						}
 					case *messageB:
 						{
+						log.InfoF("messageB msgId:{}",msgId)
 							conn.msgChanMap.Delete(msgId)
 							mq.callBackFunc(msg, true, nil)
 						}
@@ -241,7 +242,7 @@ func (conn *Conn) closeTimeOutMessage() {
 			case *messageB:
 				{
 				    conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
-					mq.callBackFunc(nil, true, nil)
+					mq.callBackFunc(nil, false, TimeoutError)
 				}
 			}
 			return true

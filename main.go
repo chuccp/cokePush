@@ -26,7 +26,7 @@ func DefaultRegister() *core.Register {
 }
 func main() {
 	config:=log.GetConfig()
-	config.SetLevel(log.TraceLevel)
+	config.SetLevel(log.InfoLevel)
 	reg := DefaultRegister()
 	cp := reg.Create()
 	cp.StartSync()

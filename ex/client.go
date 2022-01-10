@@ -58,7 +58,7 @@ func (store *store) timeOutCheck() {
 	for {
 		time.Sleep(time.Second * 5)
 		ti := time.Now()
-		log.DebugF("扫描过期连接 {}", ti)
+		log.TraceF("扫描过期连接 {}", ti)
 		store.clientMap.Range(func(key, value interface{}) bool {
 			client := value.(*client)
 			if client.timeOut(&ti) {

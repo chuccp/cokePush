@@ -28,7 +28,7 @@ func newDock() *dock {
 func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true
-	dock.sendMsg.offer(newDockMessage(iMessage, write))
+	dock.sendMsg.offer(msg)
 }
 func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
@@ -44,9 +44,11 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 		ee = err
 		return err != nil
 	})
+	log.InfoF("信息发送本机  IsForward:{}  flag:{} msgId:{}", msg.IsForward,flag,msg.InputMessage.GetMessageId())
 	if msg.IsForward && !flag {
 		if dock.handleSendMessage != nil {
 			dock.handleSendMessage(msg, func(err error, hasUser bool) {
+				log.InfoF("信息发送本机 有反馈 hasUser:{} msgId:{}", hasUser,msg.InputMessage.GetMessageId())
 				msg.flag = hasUser
 				msg.err = err
 				dock.replyMessage(msg)
@@ -63,6 +65,7 @@ func (dock *dock) DeleteUser(iUser user.IUser) {
 }
 
 func (dock *dock) replyMessage(msg *DockMessage) {
+	log.InfoF("加入消息反馈队列:{}",msg.InputMessage.GetMessageId())
 	dock.replyMsg.offer(msg)
 }
 func (dock *dock) exchangeReplyMsg() {
@@ -70,9 +73,11 @@ func (dock *dock) exchangeReplyMsg() {
 	var i = 0
 	for {
 		msg := dock.replyMsg.poll()
+		log.InfoF("处理反馈信息：{}",msg.InputMessage.GetMessageId())
 		if msg != nil {
 			msg.write(msg.err, msg.flag)
 		}
+		log.InfoF("处理反馈信息：{} 完成",msg.InputMessage.GetMessageId())
 		i++
 		if i>>10 == 1 {
 			i = 0

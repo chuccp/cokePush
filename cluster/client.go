@@ -91,10 +91,14 @@ func (client *Client) handleMessage(msg message.IMessage) {
 		lm := message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
 	case message.OrdinaryMessageClass:
-		client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
-			nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
-			client.stream.WriteMessage(nMsg)
-		})
+		messageType := msg.GetMessageType()
+		if messageType==message.BasicMessageType{
+			log.DebugF("收到普通文本信息 msgId:{}",msg.GetMessageId())
+			client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
+				nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
+				client.stream.WriteMessage(nMsg)
+			})
+		}
 	}
 }
 func NewClient(stream *net.IONetStream, server *Server, context *core.Context) (*Client, error) {

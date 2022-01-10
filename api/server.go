@@ -30,15 +30,25 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	msg := util.GetMessage(re)
 	flag := util.GetChanBool()
+	var herr error
+	var num  = false
 	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(err error, u bool) {
-		flag <- u
+		if !num{
+			num = true
+			herr=err
+			flag <- u
+		}
 	})
 	fa := <-flag
 	util.FreeChanBool(flag)
 	if fa {
 		w.Write([]byte("success"))
 	} else {
-		w.Write([]byte("NO user"))
+		if herr!=nil{
+			w.Write([]byte(herr.Error()))
+		}else{
+			w.Write([]byte("NO user"))
+		}
 	}
 
 }

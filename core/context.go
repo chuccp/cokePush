@@ -34,7 +34,7 @@ func (context *Context) SendMessage(msg message.IMessage, write WriteFunc) {
 	context.dock.sendMessage(msg, write)
 }
 func (context *Context) SendMessageNoForward(msg message.IMessage, write WriteFunc) {
-	context.dock.sendMessage(msg, write)
+	context.dock.SendMessageNoForward(msg, write)
 }
 
 func (context *Context) HandleAddUser(handleAddUser HandleAddUser) {
