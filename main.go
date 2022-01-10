@@ -7,27 +7,27 @@ import (
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/ex"
-	clog "github.com/chuccp/cokePush/log"
 	"github.com/magiconair/properties"
 )
 
 func DefaultRegister() *core.Register {
-	config,err := config.LoadFile("application.properties",properties.UTF8)
-	if err==nil{
-		var defaultRegister = core.NewRegister(config)
+	cfg, err := config.LoadFile("application.properties", properties.UTF8)
+	if err == nil {
+		var defaultRegister = core.NewRegister(cfg)
 		defaultRegister.AddServer(api.NewServer())
 		defaultRegister.AddServer(cluster.NewServer())
 		defaultRegister.AddServer(ex.NewServer())
 		return defaultRegister
-	}else{
-		log.PanicF("加载配置文件失败：{}",err.Error())
+	} else {
+		log.PanicF("加载配置文件失败：{}", err.Error())
 		return nil
 	}
 
 }
 func main() {
-	clog.Start()
-	reg:=DefaultRegister()
-	cp:=reg.Create()
+	config:=log.GetConfig()
+	config.SetLevel(log.TraceLevel)
+	reg := DefaultRegister()
+	cp := reg.Create()
 	cp.StartSync()
 }

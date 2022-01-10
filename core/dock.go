@@ -24,7 +24,7 @@ func (dock *dock) sendMessage(iMessage message.IMessage,write WriteFunc)  {
 
 func (dock *dock) writeUserMsg(msg *dockMessage) (bool, error) {
 	userId := msg.inputMessage.GetString(message.ToUser)
-	log.InfoF("信息发送:{}", userId)
+	log.DebugF("信息发送:{}", userId)
 	var ee error = nil
 	return dock.UserStore.GetUser(msg.inputMessage.GetString(message.ToUser), func(iUser user.IUser) bool {
 		err := iUser.WriteMessage(msg.inputMessage)
