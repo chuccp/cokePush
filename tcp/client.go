@@ -29,9 +29,6 @@ func (client *client) Start() {
 func (client *client)WriteMessage(iMessage message.IMessage) error{
 	return client.stream.WriteMessage(iMessage)
 }
-func (client *client)ReadMessage() (message.IMessage,error){
-	return client.stream.ReadMessage()
-}
 func (client *client)GetId() string{
 	return client.id
 }

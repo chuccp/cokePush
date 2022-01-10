@@ -162,6 +162,3 @@ func (client *client) GetUsername() string {
 func (client *client)SetUsername(username string){
 	client.username = username
 }
-func (client *client) ReadMessage() (message.IMessage, error) {
-	return nil, nil
-}
