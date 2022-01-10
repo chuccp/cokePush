@@ -87,7 +87,7 @@ func (server *Server) AcceptConn() {
 		if err != nil {
 			break
 		} else {
-			client, err := NewClient(io, server)
+			client, err := NewClient(io, server,server.context)
 			if err == nil {
 				go client.Start()
 			}

@@ -3,14 +3,16 @@ package cluster
 import (
 	"bytes"
 	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 )
 
 type Client struct {
-	stream *km.Stream
-	server *Server
+	stream  *km.Stream
+	server  *Server
+	context *core.Context
 }
 
 func (client *Client) Start() {
@@ -26,10 +28,11 @@ func (client *Client) Start() {
 	}
 
 }
+
 // queryMachineInfoType 获取当前服务器信息
-func (client *Client)queryMachineBasicType(iMsg message.IMessage)  {
+func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 	rAddress := iMsg.GetString(message.LocalMachineAddress)
-	log.DebugF("收到数据 queryMachineBasicType rAddress:{}  msgId:{}",rAddress,iMsg.GetMessageId())
+	log.DebugF("收到数据 queryMachineBasicType rAddress:{}  msgId:{}", rAddress, iMsg.GetMessageId())
 	m, err := toMachine(rAddress)
 	if err == nil {
 		addr := client.stream.RemoteAddr()
@@ -41,19 +44,17 @@ func (client *Client)queryMachineBasicType(iMsg message.IMessage)  {
 		}
 	}
 	data := toBytes(client.server.port, client.server.machineId)
-	msg := backQueryMachine(data,iMsg.GetMessageId())
+	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
 }
-func (client *Client)queryMachineInfoType(iMsg message.IMessage){
-
-
-
+func (client *Client) queryMachineInfoType(iMsg message.IMessage) {
 
 }
+
 // QueryMachineType 获取当前服务器集群列表
-func (client *Client)QueryMachineType(iMsg message.IMessage){
+func (client *Client) QueryMachineType(iMsg message.IMessage) {
 	rAddress := iMsg.GetString(message.LocalMachineAddress)
-	log.DebugF("收到数据 QueryMachineType rAddress:{}",rAddress)
+	log.DebugF("收到数据 QueryMachineType rAddress:{}", rAddress)
 	m, err := toMachine(rAddress)
 	if err == nil {
 		addr := client.stream.RemoteAddr()
@@ -69,13 +70,13 @@ func (client *Client)QueryMachineType(iMsg message.IMessage){
 	buff.WriteString(client.stream.LocalAddr().String())
 	buff.WriteString("|")
 	buff.WriteString(client.server.machineId)
-	data:=buff.Bytes()
-	log.DebugF("发送数据：{}",string(data))
-	msg := backQueryMachine(data,iMsg.GetMessageId())
+	data := buff.Bytes()
+	log.DebugF("发送数据：{}", string(data))
+	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
 }
 func (client *Client) handleMessage(msg message.IMessage) {
-	log.DebugF("查询来了 class:{}   type:{}",msg.GetClassId(),msg.GetMessageType())
+	log.DebugF("查询来了 class:{}   type:{}", msg.GetClassId(), msg.GetMessageType())
 	switch msg.GetClassId() {
 	case message.FunctionMessageClass:
 		messageType := msg.GetMessageType()
@@ -83,20 +84,23 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			client.queryMachineBasicType(msg)
 		} else if messageType == message.QueryMachineType {
 			client.QueryMachineType(msg)
-		}else if messageType == message.QueryMachineInfoType{
+		} else if messageType == message.QueryMachineInfoType {
 			client.queryMachineInfoType(msg)
 		}
 	case message.LiveMessageClass:
-		lm:=message.CreateLiveMessage()
+		lm := message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
 	case message.OrdinaryMessageClass:
-
-
-
+		client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
+			nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
+			client.stream.WriteMessage(nMsg)
+		})
 	}
-
 }
-func NewClient(stream *net.IONetStream, server *Server) (*Client, error) {
+func NewClient(stream *net.IONetStream, server *Server, context *core.Context) (*Client, error) {
 	kmStream, err := km.NewStream(stream)
-	return &Client{stream: kmStream, server: server}, err
+	if err != nil {
+		return nil, err
+	}
+	return &Client{stream: kmStream, server: server, context: context}, err
 }
