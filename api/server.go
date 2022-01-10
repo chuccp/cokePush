@@ -73,6 +73,10 @@ func (server *Server) Init(context *core.Context) {
 	context.RegisterHandle("AddRoute",server.addRoute)
 }
 
+// SetPort 在start启动前处理，覆盖配置文件配置
+func (server *Server)SetPort(port int){
+	server.port = port
+}
 func (server *Server) Name() string {
 	return "api"
 }
