@@ -74,6 +74,13 @@ func (config *Config) GetBoolOrDefault(key string, defaultValue bool) bool {
 	}
 	return false
 }
+
+func (config *Config) SetString(key string, value string) {
+	config.lock.Lock()
+	config.data[key] = value
+	config.lock.Unlock()
+}
+
 func (config *Config) GetStringOrDefault(key string, defaultValue string) string {
 	v := config.getValue(key)
 	if len(v) == 0 {
