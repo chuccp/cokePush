@@ -1,10 +1,12 @@
 package tcp
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"github.com/chuccp/cokePush/user"
 	"strconv"
 	"unsafe"
 )
@@ -23,8 +25,35 @@ func NewClient(stream *net.IONetStream,context *core.Context) (*client, error) {
 func (client *client) Start() {
 	msg, err := client.stream.ReadMessage()
 	if err != nil {
-		client.context.Handle(msg,client)
+		client.handle(msg,client)
 	}
+}
+
+func (client *client) handle(msg message.IMessage,writeRead user.IUser)error{
+	client.handleMessage(msg,writeRead)
+	return nil
+}
+
+func (client *client) handleMessage(iMessage message.IMessage, iUser user.IUser) {
+	switch iMessage.GetClassId() {
+	case message.FunctionMessageClass:
+		switch iMessage.GetMessageType() {
+		case message.LoginType:
+			client.login(iMessage, iUser)
+
+		}
+	}
+}
+func (client *client)login(iMessage message.IMessage, iUser user.IUser){
+	iUser.SetUsername(iMessage.GetString(message.Username))
+	log.DebugF("添加新用户 :{}", iUser.GetUsername())
+	if iUser.GetUsername()==""{
+		log.ErrorF("用户名不能为空")
+		return
+	}else{
+		client.context.AddUser(iUser)
+	}
+
 }
 func (client *client)WriteMessage(iMessage message.IMessage) error{
 	return client.stream.WriteMessage(iMessage)

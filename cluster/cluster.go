@@ -9,6 +9,7 @@ import (
 	"github.com/chuccp/cokePush/user"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"time"
 )
 
@@ -24,7 +25,7 @@ type Server struct {
 	machine    *machine
 	machineMap *machineStore
 	request    *km.Request
-	context *core.Context
+	context    *core.Context
 }
 type MachineInfo struct {
 	Address string
@@ -41,6 +42,45 @@ func (server *Server) Start() error {
 	return nil
 }
 
+func (server *Server) HandleAddUser(iUser user.IUser) {
+
+}
+func (server *Server) HandleDeleteUser(username string) {
+
+}
+func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)  {
+	flag:=server.sendAllMachineDockMessage(iMessage,writeFunc)
+	if !flag{
+		writeFunc(nil,false)
+	}
+}
+
+func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)bool  {
+	var i int32 = 0
+	var flag = false
+	var hasMachine = false
+	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
+		hasMachine = true
+		atomic.AddInt32(&i, 1)
+		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(iMessage message.IMessage, b bool, err error) {
+			atomic.AddInt32(&i, -1)
+			if b{
+				ty:=iMessage.GetMessageType()
+				if ty==message.BackMessageOKType{
+					flag = true
+					writeFunc(nil,true)
+				}else{
+					writeFunc(err,false)
+				}
+			}
+			if !false && i==0{
+				writeFunc(err,false)
+			}
+		})
+	})
+	return hasMachine
+}
+
 func (server *Server) AcceptConn() {
 	for {
 		io, err := server.tcpserver.Accept()
@@ -54,22 +94,20 @@ func (server *Server) AcceptConn() {
 		}
 	}
 }
-func (server *Server)machineInfo(value ...interface{})interface{}   {
-
-	mis:=make([]MachineInfo,0)
-
+func (server *Server) machineInfo(value ...interface{}) interface{} {
+	mis := make([]MachineInfo, 0)
 	server.machineMap.each(func(machineId string, machine *machine) bool {
 		var mi MachineInfo
-		mi.Address = machine.remoteHost+":"+strconv.Itoa(machine.remotePort)+"|"+machineId
+		mi.Address = machine.remoteHost + ":" + strconv.Itoa(machine.remotePort) + "|" + machineId
 
-		log.TraceF("请求 host:{}，port:{}",machine.remoteHost,machine.remotePort)
-		server.queryMachineBasic1(machine.remoteHost,machine.remotePort)
+		log.TraceF("请求 host:{}，port:{}", machine.remoteHost, machine.remotePort)
+		server.queryMachineBasic1(machine.remoteHost, machine.remotePort)
 
 		mis = append(mis, mi)
 		return true
 	})
 	var mi MachineInfo
-	mi.Address = "localhost"+":"+strconv.Itoa(server.port)+"|"+server.machineId
+	mi.Address = "localhost" + ":" + strconv.Itoa(server.port) + "|" + server.machineId
 	mi.UserNum = server.userStore.GetUserNum()
 	mis = append(mis, mi)
 	return mis
@@ -95,22 +133,23 @@ func (server *Server) queryMachine() {
 		time.Sleep(time.Minute)
 	}
 }
-func (server *Server) queryMachineBasic1(host string,port int)(*machine,*km.Conn,error){
+func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.Conn, error) {
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
 	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(host, port, qBasic)
 	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
-	if err==nil{
+	if err == nil {
 		machine := msg.GetString(message.BackMachineAddress)
 		m, err := toMachine(machine)
-		if err==nil{
-			return m,conn,nil
-		}else{
-			return nil,nil,err
+		if err == nil {
+			return m, conn, nil
+		} else {
+			return nil, nil, err
 		}
 	}
-	return nil,nil,err
+	return nil, nil, err
 }
+
 /**客户端获取请求机器信息**/
 func (server *Server) queryMachineBasic() error {
 
@@ -155,10 +194,10 @@ func (server *Server) queryMachineBasic() error {
 func (server *Server) getMachineList() {
 	qMsg := newQueryMachineMessage(server.port, server.machineId)
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
-		log.InfoF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost,remotePort)
+		log.InfoF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost, remotePort)
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
-			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err,remoteHost,remotePort)
+			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err, remoteHost, remotePort)
 		} else {
 			if message.BackMessageClass == msg.GetClassId() {
 				if message.BackMessageOKType == msg.GetMessageType() {
@@ -209,7 +248,10 @@ func (server *Server) Init(context *core.Context) {
 	server.machineMap = newMachineStore()
 	server.machine = newMachine(remotePort, remoteHost)
 	server.tcpserver = net.NewTCPServer(server.port)
-	context.RegisterHandle("machineInfo",server.machineInfo)
+	context.HandleAddUser(server.HandleAddUser)
+	context.HandleDeleteUser(server.HandleDeleteUser)
+	context.HandleSendMessage(server.HandleSendMessage)
+	context.RegisterHandle("machineInfo", server.machineInfo)
 }
 func (server *Server) Name() string {
 	return "cluster"

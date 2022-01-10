@@ -30,7 +30,7 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	msg := util.GetMessage(re)
 	flag := util.GetChanBool()
-	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(iMessage message.IMessage, err error, u bool) {
+	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(err error, u bool) {
 		flag <- u
 	})
 	fa := <-flag

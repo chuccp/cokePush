@@ -89,6 +89,7 @@ func (client *Client) handleMessage(msg message.IMessage) {
 	case message.LiveMessageClass:
 		lm:=message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
+	case message.OrdinaryMessageClass:
 
 
 

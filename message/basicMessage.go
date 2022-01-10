@@ -11,6 +11,20 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 	bm.SetString(Text, messageText)
 	return bm
 }
+type BackBasicMessage struct {
+	*Message
+}
+func CreateBackBasicMessage(isSucces bool,msgId uint32)*BackBasicMessage  {
+	if isSucces{
+		bm := &BackBasicMessage{Message: CreateBackMessage(BackMessageClass, BackMessageOKType,msgId)}
+		return bm
+	}else{
+		bm := &BackBasicMessage{Message: CreateBackMessage(BackMessageClass, BackMessageErrorType,msgId)}
+		return bm
+	}
+}
+
+
 func (basic *BasicMessage)SetExMsgId(msgId string)  {
 	basic.SetString(ExMessageId, msgId)
 }

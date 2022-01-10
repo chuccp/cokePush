@@ -33,8 +33,7 @@ func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 }
 func (store *store) createUser(userId string, w http.ResponseWriter) {
 	client := NewClient(store.context, userId)
-	login := message.CreateLoginMessage(userId)
-	client.HandleLogin(login)
+	store.context.AddUser(client)
 	store.rLock.RLock()
 	store.clientMap.Store(userId, client)
 	store.rLock.RUnlock()
@@ -92,9 +91,7 @@ func NewClient(context *core.Context, username string) *client {
 	c.userId = username + strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))), 36)
 	return c
 }
-func (client *client) HandleLogin(iMessage message.IMessage) {
-	client.context.Handle(iMessage, client)
-}
+
 func (client *client) WriteMessage(iMessage message.IMessage) error {
 	if client.hasClose{
 		return net.ErrClosed

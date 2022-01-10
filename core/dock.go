@@ -6,68 +6,72 @@ import (
 	"github.com/chuccp/cokePush/user"
 )
 
-type WriteFunc func(iMessage message.IMessage,err error,hasUser bool)
+type WriteFunc func(err error, hasUser bool)
+
+type HandleAddUser func(iUser user.IUser)
+type HandleDeleteUser func(username string)
+type HandleSendMessage func(iMessage *DockMessage, writeFunc WriteFunc)
 
 type dock struct {
-	sendMsg   *Queue
-	replyMsg *Queue
-	UserStore *user.Store
+	sendMsg           *Queue
+	replyMsg          *Queue
+	UserStore         *user.Store
+	handleAddUser     HandleAddUser
+	handleDeleteUser  HandleDeleteUser
+	handleSendMessage HandleSendMessage
 }
 
 func newDock() *dock {
-	return &dock{sendMsg: NewQueue(), UserStore: user.NewStore(),replyMsg:NewQueue()}
+	return &dock{sendMsg: NewQueue(), UserStore: user.NewStore(), replyMsg: NewQueue()}
 }
 
-func (dock *dock) sendMessage(iMessage message.IMessage,write WriteFunc)  {
-	 dock.sendMsg.offer(newDockMessage(iMessage,write))
+func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
+	msg := newDockMessage(iMessage, write)
+	msg.IsForward = true
+	dock.sendMsg.offer(newDockMessage(iMessage, write))
+}
+func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
+	msg := newDockMessage(iMessage, write)
+	msg.IsForward = false
+	dock.sendMsg.offer(msg)
 }
 
-func (dock *dock) writeUserMsg(msg *dockMessage) (bool, error) {
-	userId := msg.inputMessage.GetString(message.ToUser)
+func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
+	userId := msg.InputMessage.GetString(message.ToUser)
 	log.DebugF("信息发送:{}", userId)
-	var ee error = nil
-	return dock.UserStore.GetUser(msg.inputMessage.GetString(message.ToUser), func(iUser user.IUser) bool {
-		err := iUser.WriteMessage(msg.inputMessage)
+	flag = dock.UserStore.GetUser(msg.InputMessage.GetString(message.ToUser), func(iUser user.IUser) bool {
+		err := iUser.WriteMessage(msg.InputMessage)
 		ee = err
 		return err != nil
-	}), ee
-}
-func (dock *dock)login(iMessage message.IMessage, writeRead user.IUser){
-	writeRead.SetUsername(iMessage.GetString(message.Username))
-	log.DebugF("添加新用户 :{}",writeRead.GetUsername())
-	if writeRead.GetUsername()==""{
-		log.ErrorF("用户名不能为空")
-		return
+	})
+	if msg.IsForward && !flag {
+		if dock.handleSendMessage != nil {
+			dock.handleSendMessage(msg, func(err error, hasUser bool) {
+				msg.flag = hasUser
+				msg.err = err
+				dock.replyMessage(msg)
+			})
+		}
 	}
-	dock.UserStore.AddUser(writeRead)
+	return
 }
-func (dock *dock)DeleteUser(iUser user.IUser){
+func (dock *dock) AddUser(iUser user.IUser) {
+	dock.UserStore.AddUser(iUser)
+}
+func (dock *dock) DeleteUser(iUser user.IUser) {
 	dock.UserStore.DeleteUser(iUser)
 }
-func (dock *dock) handleMessage(iMessage message.IMessage, writeRead user.IUser) {
 
-	switch iMessage.GetClassId() {
-
-	case message.FunctionMessageClass:
-		switch iMessage.GetMessageType() {
-				case message.LoginType:
-					dock.login(iMessage,writeRead)
-
-		}
-
-	}
-
-}
-func (dock *dock)  replyMessage(msg *dockMessage){
+func (dock *dock) replyMessage(msg *DockMessage) {
 	dock.replyMsg.offer(msg)
 }
-func (dock *dock) exchangeReplyMsg(){
+func (dock *dock) exchangeReplyMsg() {
 	log.Info("启动信息反馈处理")
 	var i = 0
 	for {
 		msg := dock.replyMsg.poll()
 		if msg != nil {
-			msg.write(msg.inputMessage,msg.err,msg.flag)
+			msg.write(msg.err, msg.flag)
 		}
 		i++
 		if i>>10 == 1 {

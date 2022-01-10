@@ -14,14 +14,15 @@ const (
 	run
 )
 
-type dockMessage struct {
-	inputMessage message.IMessage
-	write WriteFunc
+type DockMessage struct {
+	InputMessage message.IMessage
+	write        WriteFunc
 	flag bool
 	err error
+	IsForward bool
 }
-func newDockMessage(inputMessage message.IMessage,write WriteFunc)*dockMessage {
-	return &dockMessage{inputMessage: inputMessage,flag:false,write:write}
+func newDockMessage(inputMessage message.IMessage,write WriteFunc)*DockMessage {
+	return &DockMessage{InputMessage: inputMessage,flag:false,write:write}
 }
 type Queue struct {
 	messageList *list.List
@@ -37,7 +38,7 @@ func (queue*Queue)Num()int{
 	return queue.messageList.Len()
 }
 
-func (queue*Queue) offer(msg *dockMessage) {
+func (queue*Queue) offer(msg *DockMessage) {
 	queue.lock.RLock()
 	queue.messageList.PushBack(msg)
 	if queue.status==wait{
@@ -67,14 +68,14 @@ func (queue*Queue) Offer(msg message.IMessage)  {
 		queue.lock.RUnlock()
 	}
 }
-func (queue*Queue) poll()*dockMessage {
+func (queue*Queue) poll()*DockMessage {
 	for{
 		queue.lock.Lock()
 		ele:=queue.messageList.Front()
 		if ele!=nil {
 			queue.messageList.Remove(ele)
 			queue.lock.Unlock()
-			return ele.Value.(*dockMessage)
+			return ele.Value.(*DockMessage)
 		}else{
 			queue.status = wait
 			queue.lock.Unlock()

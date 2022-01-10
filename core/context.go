@@ -23,18 +23,29 @@ func (context *Context) GetHandle(handleName string)registerHandle {
 func (context *Context) GetConfig()*config.Config {
 	return context.config
 }
-
+func (context *Context) AddUser(iUser user.IUser) {
+	context.dock.AddUser(iUser)
+}
 func (context *Context) DeleteUser(iUser user.IUser) {
-	context.dock.UserStore.DeleteUser(iUser)
-
+	context.dock.DeleteUser(iUser)
 }
 func (context *Context) SendMessage(msg message.IMessage,write WriteFunc) {
 	 context.dock.sendMessage(msg,write)
 }
-func (context *Context) Handle(msg message.IMessage,writeRead user.IUser)error{
-	 context.dock.handleMessage(msg,writeRead)
-	 return nil
+func (context *Context) SendMessageNoForward(msg message.IMessage,write WriteFunc) {
+	context.dock.sendMessage(msg,write)
 }
+
+func (context *Context) HandleAddUser(handleAddUser HandleAddUser)  {
+	context.dock.handleAddUser  = handleAddUser
+}
+func (context *Context) HandleDeleteUser(handleDeleteUser HandleDeleteUser)  {
+	context.dock.handleDeleteUser  = handleDeleteUser
+}
+func (context *Context) HandleSendMessage(handleSendMessage HandleSendMessage)  {
+	context.dock.handleSendMessage  = handleSendMessage
+}
+
 func newContext(config *config.Config) *Context {
 	return &Context{handleFuncMap: make(map[string]registerHandle),dock:newDock(),config:config}
 }

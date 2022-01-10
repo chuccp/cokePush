@@ -60,6 +60,10 @@ const (
 
 
 
+	FunctionBackMessageClass byte = 5
+
+
+	OrdinaryMessageBackMessageClass byte = 6
 
 
 )
