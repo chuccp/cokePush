@@ -17,6 +17,8 @@ const (
 	ToUser   byte = 2
 	Text     byte = 3
 	GroupId  byte = 4
+	// ExMessageId 补充的msgId 兼容老的协议/**
+	ExMessageId byte =5
 
 	// FunctionMessageClass 功能信息，用于查询信息，修改配置
 	FunctionMessageClass byte = 2

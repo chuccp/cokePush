@@ -11,6 +11,12 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 	bm.SetString(Text, messageText)
 	return bm
 }
+func (basic *BasicMessage)SetExMsgId(msgId string)  {
+	basic.SetString(ExMessageId, msgId)
+}
+func (basic *BasicMessage)GetExMsgId(msgId string)string  {
+	return basic.GetString(ExMessageId)
+}
 type LoginMessage struct {
 	*Message
 }

@@ -33,4 +33,5 @@ func newContext() *Context {
 }
 func (context *Context) Init() {
 	go context.dock.exchangeSendMsg()
+	go context.dock.exchangeReplyMsg()
 }

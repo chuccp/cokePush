@@ -35,8 +35,15 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request){
 	server.context.SendMessage(message.CreateBasicMessage("system",username,msg), func(iMessage message.IMessage,err error,u bool)  {
 		flag <-u
 	})
-	<-flag
+	fa:=<-flag
 	util.FreeChanBool(flag)
+	if fa{
+		w.Write([]byte("success"))
+	}else{
+		w.Write([]byte("NO user"))
+	}
+
+
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request){
 	handle:=server.context.GetHandle("machineInfo")

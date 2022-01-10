@@ -23,8 +23,6 @@ type dockMessage struct {
 func newDockMessage(inputMessage message.IMessage,write WriteFunc)*dockMessage {
 	return &dockMessage{inputMessage: inputMessage,flag:false,write:write}
 }
-
-
 type Queue struct {
 	messageList *list.List
 	ch chan bool
@@ -85,10 +83,6 @@ func (queue*Queue) poll()*dockMessage {
 	}
 	return nil
 }
-
-
-
-
 func (queue*Queue) Poll(duration time.Duration)message.IMessage  {
 	for{
 		queue.lock.Lock()
