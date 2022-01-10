@@ -55,6 +55,7 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 			})
 		}
 	}
+
 	return
 }
 func (dock *dock) AddUser(iUser user.IUser) {
@@ -93,10 +94,12 @@ func (dock *dock) exchangeSendMsg() {
 		msg := dock.sendMsg.poll()
 		if msg != nil {
 			fa, err := dock.writeUserMsg(msg)
-			log.DebugF("fa:{} err:{}", fa, err)
-			msg.flag = fa
-			msg.err = err
-			dock.replyMessage(msg)
+			if !msg.IsForward || fa{
+				log.DebugF("fa:{} err:{}", fa, err)
+				msg.flag = fa
+				msg.err = err
+				dock.replyMessage(msg)
+			}
 		}
 		i++
 		if i>>10 == 1 {

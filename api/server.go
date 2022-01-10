@@ -7,6 +7,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 	"strconv"
+	"sync"
 )
 
 type Server struct {
@@ -30,26 +31,24 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	msg := util.GetMessage(re)
 	flag := util.GetChanBool()
-	var herr error
-	var num  = false
+	var once sync.Once
 	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(err error, u bool) {
-		if !num{
-			num = true
-			herr=err
+		if u {
+			w.Write([]byte("success"))
+		} else {
+			if err!=nil{
+				w.Write([]byte(err.Error()))
+			}else{
+				w.Write([]byte("NO user"))
+			}
+		}
+		once.Do(func() {
 			flag <- u
-		}
+		})
 	})
-	fa := <-flag
+	 <-flag
 	util.FreeChanBool(flag)
-	if fa {
-		w.Write([]byte("success"))
-	} else {
-		if herr!=nil{
-			w.Write([]byte(herr.Error()))
-		}else{
-			w.Write([]byte("NO user"))
-		}
-	}
+
 
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {

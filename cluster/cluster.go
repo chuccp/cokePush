@@ -195,7 +195,7 @@ func (server *Server) queryMachineBasic() error {
 func (server *Server) getMachineList() {
 	qMsg := newQueryMachineMessage(server.port, server.machineId)
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
-		log.InfoF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost, remotePort)
+		log.DebugF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost, remotePort)
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
 			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err, remoteHost, remotePort)
