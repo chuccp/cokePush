@@ -83,7 +83,6 @@ func (dock *dock) exchangeSendMsg() {
 	for {
 		msg := dock.sendMsg.poll()
 		if msg != nil {
-			log.InfoF("收到message msgId:", msg.inputMessage.GetMessageId())
 			fa, err := dock.writeUserMsg(msg)
 			log.DebugF("fa:{} err:{}", fa, err)
 			msg.flag = fa
