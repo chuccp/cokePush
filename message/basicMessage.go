@@ -14,8 +14,8 @@ func CreateBasicMessage(fromUser string, toUser string, messageText string) *Bas
 type BackBasicMessage struct {
 	*Message
 }
-func CreateBackBasicMessage(isSucces bool,msgId uint32)*BackBasicMessage  {
-	if isSucces{
+func CreateBackBasicMessage(isSuccess bool,msgId uint32)*BackBasicMessage  {
+	if isSuccess{
 		bm := &BackBasicMessage{Message: CreateBackMessage(BackMessageClass, BackMessageOKType,msgId)}
 		return bm
 	}else{

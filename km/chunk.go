@@ -115,9 +115,11 @@ func (chunk0 chunk0) toByte() []byte {
 	bytesArray = append(bytesArray, util.U32TOBytes(chunk0.messageId)...)
 	bytesArray = append(bytesArray, lengthToBytes(chunk0.messageLength)...)
 	//写body
-	bytesArray = append(bytesArray, chunk0.key)
-	bytesArray = append(bytesArray, lengthToBytes(chunk0.dataLen)...)
-	bytesArray = append(bytesArray, chunk0.data...)
+	if chunk0.messageLength>0{
+		bytesArray = append(bytesArray, chunk0.key)
+		bytesArray = append(bytesArray, lengthToBytes(chunk0.dataLen)...)
+		bytesArray = append(bytesArray, chunk0.data...)
+	}
 	return bytesArray
 }
 
@@ -241,6 +243,15 @@ func (stream *chunkWriteStream) hasNext() bool {
 
 	return stream.rMessageLength < stream.messageLength
 }
+func (stream *chunkWriteStream) readChunk0() IChunk {
+	if stream.messageLength>0{
+		stream.process = 0
+		return stream.readChunk()
+	}else{
+		chunk := createChunk0(stream.chunkId, stream.message.GetClassId(), stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp)
+		return chunk
+	}
+}
 func (stream *chunkWriteStream) readChunk() IChunk {
 
 	if stream.process == 0 || stream.process == 1 {
@@ -312,6 +323,7 @@ func (stream *chunkReadStream) InitChunkRecord(chunkId uint16, chunk *chunk0) {
 	msg.SetClassId(chunk.classId)
 	msg.SetMessageType(chunk.messageType)
 	msg.SetTimestamp(chunk.time)
+	msg.SetMessageId(chunk.messageId)
 	stream.recordMap[chunkId] = newChunkRecord(msg)
 	stream.recordMap[chunkId].messageLength = chunk.messageLength
 }
@@ -326,8 +338,6 @@ func (stream *chunkReadStream) GetRDataLength(chunkId uint16) uint32 {
 func (stream *chunkReadStream) putChunk0(chunkId uint16, chunk *chunk0) bool {
 	chunkRecord := stream.recordMap[chunkId]
 	chunkRecord.rDataLength = chunkRecord.rDataLength + uint32(len(chunk.data))
-	chunkRecord.msg.SetMessageId(chunk.messageId)
-	chunkRecord.msg.SetTimestamp(chunk.time)
 	if chunkRecord.dataLength == chunkRecord.rDataLength {
 		chunkRecord.data = make([]byte, 0)
 		chunkRecord.msg.SetValue(chunk.key, chunk.data)
@@ -378,7 +388,9 @@ func (stream *chunkReadStream) readMessage() (*message.Message, error) {
 			return nil, err
 		} else {
 			if fa {
-				return stream.recordMap[chunkId].msg, nil
+				msg:= stream.recordMap[chunkId].msg
+				delete(stream.recordMap,chunkId)
+				return msg, err
 			}
 		}
 	}
@@ -393,13 +405,17 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 		if ck.chunkType() == 0 {
 			chunk0 := createPoolChunk0(ck)
 			data, err = stream.read_.ReadBytes(10)
-			chunk0.classId = data[0]
-			chunk0.messageType = data[1]
-			chunk0.time = util.U32BE(data[2:6])
-			chunk0.messageId = util.U32BE(data[6:10])
-			chunk0.messageLength, err = stream.readMessageLength()
-			stream.InitChunkRecord(chunkId, chunk0)
 			if err == nil {
+				chunk0.classId = data[0]
+				chunk0.messageType = data[1]
+				chunk0.time = util.U32BE(data[2:6])
+				chunk0.messageId = util.U32BE(data[6:10])
+				chunk0.messageLength, err = stream.readMessageLength()
+				stream.InitChunkRecord(chunkId, chunk0)
+				if chunk0.messageLength==0{
+					freePoolChunk0(chunk0)
+					return chunkId, true, nil
+				}
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
 					chunk0.dataLen, err = stream.readMessageLength()
@@ -411,7 +427,6 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 							chunk0.data, err = stream.read_.ReadUintBytes(stream.maxBodySize)
 						}
 						fa := stream.putChunk0(chunkId, chunk0)
-
 						freePoolChunk0(chunk0)
 						return chunkId, fa, nil
 					}

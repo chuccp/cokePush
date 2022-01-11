@@ -27,8 +27,8 @@ type IMessage interface {
 }
 
 type Message struct {
-	messageType   byte
 	classId       byte
+	messageType   byte
 	keys          []byte
 	data          map[byte][]byte
 	messageLength uint32

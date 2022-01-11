@@ -144,7 +144,18 @@ func (conn *Conn) Close() {
 }
 func (conn *Conn) clear() {
 	conn.msgChanMap.Range(func(key, value interface{}) bool {
-		value.(*messageQ).close()
+
+
+		switch mq := value.(type) {
+		case *messageQ:
+			{
+				mq.close()
+			}
+		case *messageB:
+			{
+				conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
+			}
+		}
 		return true
 	})
 }
@@ -177,6 +188,7 @@ func (conn *Conn) read() {
 	for conn.status == CONNING {
 		msg, err := conn.stream.ReadMessage()
 		if err == nil {
+			log.InfoF("收到信息：classId:{} type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(), msg.GetMessageId())
 			classId := msg.GetClassId()
 			if classId != message.LiveMessageClass {
 				msgId := msg.GetMessageId()
@@ -185,11 +197,12 @@ func (conn *Conn) read() {
 					switch mq := ms.(type) {
 					case *messageQ:
 						{
+							log.InfoF("messageQ msgId:{}", msgId)
 							mq.notify(msg)
 						}
 					case *messageB:
 						{
-						log.InfoF("messageB msgId:{}",msgId)
+							log.InfoF("messageB msgId:{}", msgId)
 							conn.msgChanMap.Delete(msgId)
 							mq.callBackFunc(msg, true, nil)
 						}
@@ -241,7 +254,7 @@ func (conn *Conn) closeTimeOutMessage() {
 				}
 			case *messageB:
 				{
-				    conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
+					conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
 					mq.callBackFunc(nil, false, TimeoutError)
 				}
 			}
@@ -333,13 +346,13 @@ func (request *Request) Call(host string, port int, message message.IMessage) (m
 		return msg, rq, err
 	}
 }
-func (request *Request)Async(host string, port int, iMessage message.IMessage,callBackFunc CallBackFunc){
+func (request *Request) Async(host string, port int, iMessage message.IMessage, callBackFunc CallBackFunc) {
 	rq, err := request.getConn(host, port)
 	if err != nil {
-		callBackFunc(nil,false,err)
+		callBackFunc(nil, false, err)
 	} else {
 		rq.asyncWrite(iMessage, func(iMessage message.IMessage, b bool, err error) {
-			callBackFunc(iMessage,b,err)
+			callBackFunc(iMessage, b, err)
 		})
 	}
 }
