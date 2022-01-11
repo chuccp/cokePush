@@ -48,8 +48,6 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	})
 	 <-flag
 	util.FreeChanBool(flag)
-
-
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
 	handle := server.context.GetHandle("machineInfo")

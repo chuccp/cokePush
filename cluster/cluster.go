@@ -65,6 +65,7 @@ func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writ
 		log.DebugF("向{}:{} 发送集群信息 msgId:{}",remoteHost,remotePort,iMessage.InputMessage.GetMessageId())
 		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(iMessage message.IMessage, b bool, err error) {
 			atomic.AddInt32(&i, -1)
+			log.DebugF("b: {}",b)
 			if b{
 				ty:=iMessage.GetMessageType()
 				if ty==message.BackMessageOKType{

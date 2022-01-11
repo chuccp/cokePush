@@ -6,6 +6,7 @@ import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
+	net2 "net"
 	"strconv"
 	"sync"
 	"time"
@@ -151,6 +152,9 @@ func (conn *Conn) clear() {
 			}
 		case *messageB:
 			{
+				if mq.callBackFunc!=nil{
+					mq.callBackFunc(nil,false,net2.ErrClosed)
+				}
 				conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
 			}
 		}
