@@ -103,9 +103,6 @@ func (stream *Stream) ReadMessage() (message.IMessage, error) {
 }
 func (stream *Stream) WriteMessage(msg message.IMessage) error {
 	err:= stream.km.WriteMessage(msg)
-	if err==nil{
-		err=stream.io.Flush()
-	}
 	return err
 }
 

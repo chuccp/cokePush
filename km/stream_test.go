@@ -3,6 +3,7 @@ package km
 import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
+	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
 	"sync"
 	"testing"
@@ -12,20 +13,19 @@ import (
 /**
 测试message 转 chunk
 */
-func TestStream_WriteMessage(t *testing.T) {
+func TestStream_ReadMessage(t *testing.T) {
 
 	fs, err := util.NewFileStream("D:\\attach\\bb.bin")
+	k := NewKm00001(net.NewIOStream2(fs))
 	time1 := time.Now()
-	var i = 0
 	if err == nil {
-		for ; i < 1; i++ {
-			fs.Seek(0)
-			k := NewKm00001(fs)
+		for  {
 			msg, err := k.ReadMessage()
 			if err == nil {
-				msg.GetTimestamp()
+				t.Log(msg)
 			} else {
 				t.Log(err)
+				break
 			}
 		}
 	}
@@ -35,15 +35,22 @@ func TestStream_WriteMessage(t *testing.T) {
 	t.Log(time2.Sub(time1))
 
 }
-func TestStream_ReadMessage(t *testing.T) {
+func TestStream_WriteMessage(t *testing.T) {
 
-	bm := message.CreateBasicMessage("333333", "2222222", "444444")
+	bm := message.CreateBasicMessage("1", "2", "3")
+
+	back:=message.CreateBackMessage(message.BackMessageClass,message.BackMessageOKType,message.MsgId())
 
 	fs, err := util.NewFileStream("D:\\attach\\bb.bin")
+	k := NewKm00001(net.NewIOStream2(fs))
 	time1 := time.Now()
 	if err == nil {
-		k := NewKm00001(fs)
+		k.WriteMessage(back)
 		k.WriteMessage(bm)
+		k.WriteMessage(back)
+		k.WriteMessage(bm)
+	}else{
+		log.InfoF("{}",err)
 	}
 	time2 := time.Now()
 

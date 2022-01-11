@@ -91,7 +91,13 @@ type IONetStream struct {
 }
 
 func NewIOStream(cnn *net.TCPConn) *IONetStream {
-	var sm *IONetStream= &IONetStream{TCPConn: cnn, isManualClose: false}
+	var sm = &IONetStream{TCPConn: cnn, isManualClose: false}
+	sm.IOWriteStream = NewIOWriteStream(cnn)
+	sm.IOReadStream = NewIOReadStream(cnn)
+	return sm
+}
+func NewIOStream2(cnn io.ReadWriter) *IONetStream {
+	var sm = &IONetStream{isManualClose: false}
 	sm.IOWriteStream = NewIOWriteStream(cnn)
 	sm.IOReadStream = NewIOReadStream(cnn)
 	return sm

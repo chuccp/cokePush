@@ -2,7 +2,7 @@ package km
 
 import (
 	"github.com/chuccp/cokePush/message"
-	"io"
+	"github.com/chuccp/cokePush/net"
 )
 
 type km interface {
@@ -11,14 +11,14 @@ type km interface {
 }
 
 type km00001 struct {
-	io io.ReadWriter
+	readWrite *net.IONetStream
 }
 
-func NewKm00001(io io.ReadWriter) *km00001 {
-	return &km00001{io: io}
+func NewKm00001(readWrite *net.IONetStream) *km00001 {
+	return &km00001{readWrite: readWrite}
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
-	chunkStream := createChunkReadStream(km.io)
+	chunkStream := createChunkReadStream(km.readWrite.IOReadStream)
 	msg, err := chunkStream.readMessage()
 	freeChunkReadStream(chunkStream)
 	return msg, err
@@ -40,9 +40,10 @@ func (km *km00001) WriteMessage(msg message.IMessage) error {
 		}
 	}
 	freeChunkWriteStream(chunkStream)
+	km.readWrite.IOWriteStream.Flush()
 	return nil
 }
 func (km *km00001) writeChunk(chunk IChunk) error {
-	_, err := km.io.Write(chunk.toByte())
+	_, err := km.readWrite.IOWriteStream.Write(chunk.toByte())
 	return err
 }

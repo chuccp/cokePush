@@ -125,7 +125,7 @@ func (server *Server) queryMachine() {
 			if err == nil {
 				hasQuery = true
 			} else {
-				log.ErrorF("queryMachineInfo err:{}", err)
+				log.ErrorF("queryMachineBasic err:{}", err)
 			}
 		}
 		if hasQuery {
@@ -155,9 +155,9 @@ func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.C
 func (server *Server) queryMachineBasic() error {
 
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
-	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
+	log.DebugF("queryMachineBasic发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qBasic)
-	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
+	log.DebugF("queryMachineBasic 收到信息 :{}", server.machineId)
 	if err == nil {
 		if message.BackMessageClass == msg.GetClassId() {
 			if message.BackMessageOKType == msg.GetMessageType() {

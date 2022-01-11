@@ -1,7 +1,6 @@
 package local
 
 import (
-	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"log"
 	"testing"
@@ -22,20 +21,6 @@ func TestEqual(t *testing.T) {
 
 }
 func TestServer(t *testing.T) {
-	var defaultRegister = core.NewRegister()
-	server := NewServer()
-	defaultRegister.AddServer(server)
-	cokePush := defaultRegister.Create()
-	cokePush.StartSync()
-	u := NewUser("222222", WriteMessage)
-	bm := message.CreateBasicMessage("222222", "222222", "!!!!!!!!!!!!!")
-	client := server.CreateClient(u)
-	client.login()
-	err := client.handleMessage(bm)
-	if err != nil {
-		t.Log(err)
-	} else {
-		t.Log("haha")
-	}
+
 
 }

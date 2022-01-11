@@ -104,9 +104,7 @@ func (conn *Conn) write(iMessage message.IMessage) (message.IMessage, error) {
 			freeMessageQ(msgQ)
 			return nil, err
 		}
-		log.DebugF("==========开始等待")
 		msg, fa := msgQ.wait()
-		log.DebugF("==========等待结束")
 		conn.msgChanMap.Delete(msgId)
 		freeMessageQ(msgQ)
 		if fa {
@@ -188,7 +186,6 @@ func (conn *Conn) read() {
 	for conn.status == CONNING {
 		msg, err := conn.stream.ReadMessage()
 		if err == nil {
-			log.InfoF("收到信息：classId:{} type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(), msg.GetMessageId())
 			classId := msg.GetClassId()
 			if classId != message.LiveMessageClass {
 				msgId := msg.GetMessageId()

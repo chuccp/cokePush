@@ -1,6 +1,7 @@
 package km
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
@@ -44,9 +45,9 @@ func createChunkWriteStreamPool(msg message.IMessage) *chunkWriteStream {
 	chunkWriteStream.rMessageLength = 0
 	return chunkWriteStream
 }
-func createChunkReadStream(read_ io.Reader) *chunkReadStream {
+func createChunkReadStream(read_ *net.IOReadStream) *chunkReadStream {
 	var chunkReadStream = chunkReadStreamPool.Get().(*chunkReadStream)
-	chunkReadStream.read_ = net.NewIOReadStream(read_)
+	chunkReadStream.read_ =read_
 	chunkReadStream.maxBodySize = 512
 	chunkReadStream.recordMap = make(map[uint16]*chunkRecord)
 	return chunkReadStream
@@ -108,6 +109,9 @@ func (chunk0 chunk0) toByte() []byte {
 	bytesArray := make([]byte, 0)
 	//写chunk
 	bytesArray = append(bytesArray, chunk0.chunk.toByte()...)
+
+	log.InfoF("chunk",chunk0.chunk.toByte())
+
 	//写header
 	bytesArray = append(bytesArray, chunk0.classId)
 	bytesArray = append(bytesArray, chunk0.messageType)
