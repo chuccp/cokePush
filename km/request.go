@@ -135,6 +135,10 @@ func (conn *Conn) asyncWrite(iMessage message.IMessage, callBackFunc CallBackFun
 	}
 }
 
+// JustWrite /** 只写不管有无处理
+func (conn *Conn) justWrite(iMessage message.IMessage){
+	 conn.stream.WriteMessage(iMessage)
+}
 func (conn *Conn) getStatus() int {
 	return conn.status
 }
@@ -353,5 +357,13 @@ func (request *Request) Async(host string, port int, iMessage message.IMessage, 
 		callBackFunc(nil, false, err)
 	} else {
 		rq.asyncWrite(iMessage,callBackFunc)
+	}
+}
+func (request *Request) JustCall(host string, port int, message message.IMessage)  {
+	rq, err := request.getConn(host, port)
+	if err != nil {
+		return
+	} else {
+		rq.justWrite(message)
 	}
 }

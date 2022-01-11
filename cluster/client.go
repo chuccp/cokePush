@@ -87,6 +87,17 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			client.QueryMachineType(msg)
 		} else if messageType == message.QueryMachineInfoType {
 			client.queryMachineInfoType(msg)
+		}else if messageType==message.AddUserType{
+
+			username:=msg.GetString(message.USERNAME)
+			log.InfoF("收到新增用户：{}",username)
+			machineId:=msg.GetString(message.MaChineId)
+			client.server.addUser(username,machineId)
+		}else if messageType==message.DeleteUserType{
+			username:=msg.GetString(message.USERNAME)
+			machineId:=msg.GetString(message.MaChineId)
+			log.InfoF("收到删除用户：{}",username)
+			client.server.delete(username,machineId)
 		}
 	case message.LiveMessageClass:
 		log.DebugF("LiveMessageClass：",msg.GetMessageId())

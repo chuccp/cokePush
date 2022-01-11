@@ -11,9 +11,18 @@ import (
 type queryMachineMessage struct {
 	*message.Message
 }
-
-
-
+func newAddUserMessage(machineId string,username string)*message.Message  {
+	bm := message.CreateMessage(message.FunctionMessageClass, message.AddUserType)
+	bm.SetString(message.USERNAME,username)
+	bm.SetString(message.MaChineId,machineId)
+	return bm
+}
+func newDeleteUserMessage(machineId string,username string)*message.Message  {
+	bm := message.CreateMessage(message.FunctionMessageClass, message.DeleteUserType)
+	bm.SetString(message.USERNAME,username)
+	bm.SetString(message.MaChineId,machineId)
+	return bm
+}
 func newQueryMachineMessage(localPort int,machineId string)*queryMachineMessage  {
 	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineType)}
 	bm.SetValue(message.LocalMachineAddress,toBytes(localPort,machineId))

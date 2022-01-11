@@ -24,6 +24,13 @@ func (machineStore *machineStore)add(machine *machine)bool  {
 	_,fa:=machineStore.machineMap.LoadOrStore(mid,machine)
 	return !fa
 }
+func (machineStore *machineStore)getMachine(machineId string)(*machine,bool)  {
+	v,fa:=machineStore.machineMap.Load(machineId)
+	if fa{
+		return v.(*machine),true
+	}
+	return nil,fa
+}
 func (machineStore *machineStore)each(f func(machineId string,machine * machine)bool)  {
 	machineStore.machineMap.Range(func(key, value interface{}) bool {
 		return f(key.(string),value.(* machine))

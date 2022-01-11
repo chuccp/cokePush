@@ -21,15 +21,15 @@ type Server struct {
 	port       int
 	machineId  string
 	tcpserver  *net.TCPServer
-	userStore  *user.Store
 	machine    *machine
 	machineMap *machineStore
 	request    *km.Request
 	context    *core.Context
+	userStore *userStore
 }
 type MachineInfo struct {
 	Address string
-	UserNum uint
+	UserNum int32
 }
 
 func (server *Server) Start() error {
@@ -43,17 +43,67 @@ func (server *Server) Start() error {
 }
 
 func (server *Server) HandleAddUser(iUser user.IUser) {
-
+	log.InfoF("发送添加用户")
+	msg:=newAddUserMessage(server.machineId,iUser.GetUsername())
+	server.machineMap.eachAddress(func(remoteHost string, remotePort int){
+		server.request.JustCall(remoteHost,remotePort,msg)
+	})
 }
 func (server *Server) HandleDeleteUser(username string) {
-
+	msg:=newDeleteUserMessage(server.machineId,username)
+	server.machineMap.eachAddress(func(remoteHost string, remotePort int){
+		server.request.JustCall(remoteHost,remotePort,msg)
+	})
+}
+func (server *Server)addUser(username string,machineId string){
+	m,ok:=server.machineMap.getMachine(machineId)
+	if ok{
+		server.userStore.AddUser(username,m.remoteHost,m.remotePort)
+	}
+}
+func (server *Server)delete(username string,machineId string)  {
+	server.userStore.DeleteUser(username)
 }
 func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)  {
-	flag:=server.sendAllMachineDockMessage(iMessage,writeFunc)
-	if !flag{
+	server.sendStoreMachineDockMessage(iMessage, func(err error, hasUser bool) {
+		if hasUser{
+			log.InfoF("找到用户，直接发送:{}",iMessage.GetToUsername())
+			writeFunc(err,hasUser)
+		}else{
+			log.InfoF("没找到用户，全局发送:{}",iMessage.GetToUsername())
+			flag:=server.sendAllMachineDockMessage(iMessage,writeFunc)
+			if !flag{
+				writeFunc(nil,false)
+			}
+		}
+	})
+}
+
+func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc){
+	username:=iMessage.GetToUsername()
+	u,ok:=server.userStore.GetUserMachine(username)
+	if ok{
+		server.request.Async(u.remoteHost, u.remotePort, iMessage.InputMessage, func(replayMessage message.IMessage, hasReplay bool, err error) {
+			if hasReplay{
+				ty:=replayMessage.GetMessageType()
+				if ty==message.BackMessageOKType{
+					writeFunc(nil,true)
+				}else{
+					log.DebugF("发信息失败 u:{} DeleteUser",username)
+					server.userStore.DeleteUser(username)
+					writeFunc(err,false)
+				}
+			}else{
+				log.DebugF("发信息失败 u:{} DeleteUser",username)
+				server.userStore.DeleteUser(username)
+				writeFunc(err,false)
+			}
+		})
+	}else{
 		writeFunc(nil,false)
 	}
 }
+
 
 func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)bool  {
 	var i int32 = 0
@@ -63,14 +113,14 @@ func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writ
 		hasMachine = true
 		atomic.AddInt32(&i, 1)
 		log.DebugF("向{}:{} 发送集群信息 msgId:{}",remoteHost,remotePort,iMessage.InputMessage.GetMessageId())
-		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(iMessage message.IMessage, b bool, err error) {
+		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(replayMessage message.IMessage, hasReplay bool, err error) {
 			atomic.AddInt32(&i, -1)
-			log.DebugF("b: {}",b)
-			if b{
-				ty:=iMessage.GetMessageType()
+			if hasReplay{
+				ty:=replayMessage.GetMessageType()
 				if ty==message.BackMessageOKType{
 					flag = true
 					writeFunc(nil,true)
+					server.userStore.AddUser(iMessage.GetToUsername(),remoteHost,remotePort)
 				}
 			}
 			if !flag && i==0{
@@ -108,7 +158,7 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 	})
 	var mi MachineInfo
 	mi.Address = "localhost" + ":" + strconv.Itoa(server.port) + "|" + server.machineId
-	mi.UserNum = server.userStore.GetUserNum()
+	mi.UserNum = server.context.UserNum()
 	mis = append(mis, mi)
 	return mis
 }
@@ -234,6 +284,11 @@ func (server *Server) getMachineList() {
 // Init 初始化
 func (server *Server) Init(context *core.Context) {
 	server.context = context
+	/**
+	集群用户记录
+	 */
+
+	server.userStore = newUserStore()
 	server.port = context.GetConfig().GetIntOrDefault("cluster.local.port", 6361)
 	server.machineId = context.GetConfig().GetStringOrDefault("cluster.local.machineId", MachineId())
 	if server.machineId == "" {

@@ -21,6 +21,10 @@ type DockMessage struct {
 	err error
 	IsForward bool
 }
+
+func (dm *DockMessage)GetToUsername()string  {
+	return dm.InputMessage.GetString(message.ToUser)
+}
 func newDockMessage(inputMessage message.IMessage,write WriteFunc)*DockMessage {
 	return &DockMessage{InputMessage: inputMessage,flag:false,write:write}
 }

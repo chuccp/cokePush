@@ -62,10 +62,25 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 	return
 }
 func (dock *dock) AddUser(iUser user.IUser) {
-	dock.UserStore.AddUser(iUser)
+	fa:=dock.UserStore.AddUser(iUser)
+	log.InfoF("添加用户：{}  flag:{}",iUser.GetUsername(),fa)
+	if fa{
+		if dock.handleAddUser!=nil{
+			dock.handleAddUser(iUser)
+		}
+	}
 }
 func (dock *dock) DeleteUser(iUser user.IUser) {
-	dock.UserStore.DeleteUser(iUser)
+	fa:=dock.UserStore.DeleteUser(iUser)
+	log.InfoF("删除用户：{}  flag:{}",iUser.GetUsername(),fa)
+	if fa{
+		if dock.handleDeleteUser!=nil{
+			dock.handleDeleteUser(iUser.GetUsername())
+		}
+	}
+}
+func (dock *dock) UserNum()int32 {
+	return dock.UserStore.GetUserNum()
 }
 
 func (dock *dock) replyMessage(msg *DockMessage) {

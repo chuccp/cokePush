@@ -2,29 +2,30 @@ package user
 
 import (
 	"sync"
+	"sync/atomic"
 )
 
 type userStore struct {
 	store *sync.Map
-	num   int
+	num   int32
 }
 
 func newUserStore() *userStore {
 	return &userStore{store: new(sync.Map)}
 }
-func (userStore *userStore) add(user IUser) (bool,int) {
+func (userStore *userStore) add(user IUser) (bool,int32) {
 	_, fa := userStore.store.LoadOrStore(user.GetId(), user)
 	if !fa {
-		userStore.num++
+		atomic.AddInt32(&userStore.num,1)
 		return true,userStore.num
 	}
 	return false,userStore.num
 }
-func (userStore *userStore) delete(user IUser) (bool,int) {
+func (userStore *userStore) delete(user IUser) (bool,int32) {
 	id := user.GetId()
 	_, fa := userStore.store.LoadAndDelete(id)
 	if fa {
-		userStore.num--
+		atomic.AddInt32(&userStore.num,-1)
 		return true,userStore.num
 	}
 	return false,userStore.num
@@ -38,11 +39,11 @@ func (userStore *userStore)each(f func(IUser)bool)  {
 
 type indexMap struct {
 	uMap  *sync.Map
-	num   uint
+	num   int32
 	rLock *sync.RWMutex
 }
 
-func newIndexMap() *indexMap {
+func NewIndexMap() *indexMap {
 	return &indexMap{new(sync.Map), 0, new(sync.RWMutex)}
 }
 
@@ -59,7 +60,9 @@ func (index *indexMap) add(user IUser) bool {
 	 	us:=newUserStore()
 		us.add(user)
 		index.uMap.Store(username, us)
-		index.num++
+		 atomic.AddInt32(&index.num,1)
+		index.rLock.Unlock()
+		 return true
 	}
 	index.rLock.Unlock()
 	return false
@@ -75,7 +78,9 @@ func (index *indexMap) delete(user IUser) bool {
 			_,num:=us.delete(user)
 			if num==0{
 				index.uMap.Delete(username)
-				index.num--
+				atomic.AddInt32(&index.num,-1)
+				index.rLock.Unlock()
+				return true
 			}
 		}
 	}

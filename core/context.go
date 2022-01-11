@@ -27,6 +27,9 @@ func (context *Context) GetConfig() *config.Config {
 func (context *Context) AddUser(iUser user.IUser) {
 	context.dock.AddUser(iUser)
 }
+func (context *Context) UserNum() int32{
+	return context.dock.UserNum()
+}
 func (context *Context) DeleteUser(iUser user.IUser) {
 	context.dock.DeleteUser(iUser)
 }
