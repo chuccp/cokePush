@@ -44,7 +44,11 @@ func backQueryMachine(data []byte,msgId uint32)*queryMachineMessage  {
 	bm.SetValue(message.BackMachineAddress,data)
 	return bm
 }
-
+func backQueryInfoMachine(data []byte,msgId uint32)*queryMachineMessage  {
+	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageOKType,msgId)}
+	bm.SetValue(message.QueryMachineInfo,data)
+	return bm
+}
 func toBytes(localPort int,machineId string)[]byte  {
 	var localHost = "0.0.0.0"
 	return toBytes2(localHost, localPort,machineId)

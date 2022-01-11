@@ -36,6 +36,8 @@ const (
 
 	QueryMachineInfoType = 5
 
+	QueryMachineInfo = 5
+
 	LocalMachineAddress = 1
 
 	DeleteUserType = 6
@@ -45,6 +47,10 @@ const (
 	USERNAME = 1
 
 	MaChineId = 2
+
+	QueryType = 8
+
+
 
 	// LiveMessageClass 心跳信息，用于心跳测试以及集群信息交流
 	LiveMessageClass byte = 3
@@ -58,6 +64,8 @@ const (
 	BackMessageOKType byte = 1
 
 	BackMachineAddress = 2
+
+	queryData = 3
 
 	// BackMessageErrorType 返回异常
 	BackMessageErrorType byte = 2

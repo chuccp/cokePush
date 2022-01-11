@@ -7,6 +7,7 @@ import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
+	"github.com/pquerna/ffjson/ffjson"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -30,6 +31,7 @@ type Server struct {
 type MachineInfo struct {
 	Address string
 	UserNum int32
+	MachineId string
 }
 
 func (server *Server) Start() error {
@@ -145,24 +147,33 @@ func (server *Server) AcceptConn() {
 	}
 }
 func (server *Server) machineInfo(value ...interface{}) interface{} {
-	mis := make([]MachineInfo, 0)
-	server.machineMap.each(func(machineId string, machine *machine) bool {
-		var mi MachineInfo
-		mi.Address = machine.remoteHost + ":" + strconv.Itoa(machine.remotePort) + "|" + machineId
-
-		log.TraceF("请求 host:{}，port:{}", machine.remoteHost, machine.remotePort)
-		server.queryMachineBasic1(machine.remoteHost, machine.remotePort)
-
-		mis = append(mis, mi)
-		return true
+	mis := make([]*MachineInfo, 0)
+	queryInfo:=newQueryMachineInfo()
+	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
+		im,_,err:= server.request.Call(remoteHost,remotePort,queryInfo)
+		log.DebugF("查询machineInfo {}：{} err：{}",remoteHost,remotePort,err)
+		if err==nil{
+			data:=im.GetValue(message.QueryMachineInfo)
+			if len(data)>0{
+				var mi MachineInfo
+				err:=ffjson.Unmarshal(data,&mi)
+				mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
+				if err==nil{
+					mis = append(mis,&mi)
+				}
+			}
+		}
 	})
-	var mi MachineInfo
-	mi.Address = "localhost" + ":" + strconv.Itoa(server.port) + "|" + server.machineId
-	mi.UserNum = server.context.UserNum()
-	mis = append(mis, mi)
+	mis = append(mis, server.queryMachineInfo())
 	return mis
 }
-
+func (server *Server) queryMachineInfo()*MachineInfo{
+	var mi MachineInfo
+	mi.Address = "localhost" + ":" + strconv.Itoa(server.port)
+	mi.MachineId = server.machineId
+	mi.UserNum = server.context.UserNum()
+	return &mi
+}
 func (server *Server) queryMachine() {
 	var hasQuery = false
 	for {
@@ -185,9 +196,9 @@ func (server *Server) queryMachine() {
 }
 func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.Conn, error) {
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
-	log.DebugF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
+	log.InfoF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(host, port, qBasic)
-	log.DebugF("queryMachineInfo 收到信息 :{}", server.machineId)
+	log.InfoF("queryMachineInfo 收到信息 :{}", server.machineId)
 	if err == nil {
 		machine := msg.GetString(message.BackMachineAddress)
 		m, err := toMachine(machine)

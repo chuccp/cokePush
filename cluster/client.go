@@ -7,6 +7,7 @@ import (
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 type Client struct {
@@ -49,6 +50,16 @@ func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 }
 func (client *Client) queryMachineInfoType(iMsg message.IMessage) {
 
+	mi:=client.server.queryMachineInfo()
+
+	data,err:=ffjson.Marshal(mi)
+	if err==nil{
+		msg := backQueryInfoMachine(data, iMsg.GetMessageId())
+		client.stream.WriteMessage(msg)
+	}else{
+		msg := backQueryInfoMachine([]byte(`{"Address":"`+client.server.machineId+`@`+err.Error()+`"}`), iMsg.GetMessageId())
+		client.stream.WriteMessage(msg)
+	}
 }
 
 // QueryMachineType 获取当前服务器集群列表
