@@ -53,9 +53,12 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 				msg.err = err
 				dock.replyMessage(msg)
 			})
+		}else{
+			msg.flag = false
+			msg.err = NoFoundUser
+			dock.replyMessage(msg)
 		}
 	}
-
 	return
 }
 func (dock *dock) AddUser(iUser user.IUser) {
