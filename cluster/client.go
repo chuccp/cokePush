@@ -76,9 +76,10 @@ func (client *Client) QueryMachineType(iMsg message.IMessage) {
 	client.stream.WriteMessage(msg)
 }
 func (client *Client) handleMessage(msg message.IMessage) {
-	log.InfoF("请求来了 class:{}   type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(),msg.GetMessageId())
+	log.DebugF("请求来了 class:{}   type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(),msg.GetMessageId())
 	switch msg.GetClassId() {
 	case message.FunctionMessageClass:
+		log.DebugF("FunctionMessageClass：",msg.GetMessageId())
 		messageType := msg.GetMessageType()
 		if messageType == message.QueryMachineBasicType {
 			client.queryMachineBasicType(msg)
@@ -88,17 +89,18 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			client.queryMachineInfoType(msg)
 		}
 	case message.LiveMessageClass:
+		log.DebugF("LiveMessageClass：",msg.GetMessageId())
 		lm := message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
 	case message.OrdinaryMessageClass:
 		messageType := msg.GetMessageType()
 		if messageType==message.BasicMessageType{
-			log.InfoF("收到普通文本信息 msgId:{}",msg.GetMessageId())
+			log.DebugF("收到普通文本信息 msgId:{}",msg.GetMessageId())
 			client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
 
 				nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
 				err2:=client.stream.WriteMessage(nMsg)
-				log.InfoF("收到普通文本信息 msgId:{} 处理信息1:{}   {}",msg.GetMessageId(),err,err2)
+				log.DebugF("收到普通文本信息 msgId:{} 处理信息1:{}   {}",msg.GetMessageId(),err,err2)
 			})
 		}
 	}

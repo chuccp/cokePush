@@ -1,7 +1,6 @@
 package km
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
@@ -414,14 +413,12 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 				chunk0.messageLength, err = stream.readMessageLength()
 				stream.InitChunkRecord(chunkId, chunk0)
 				if chunk0.messageLength==0{
-					log.InfoF("messageLength_0  chunkId:{}",chunkId)
 					freePoolChunk0(chunk0)
 					return chunkId, true, nil
 				}
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
 					chunk0.dataLen, err = stream.readMessageLength()
-					log.InfoF("SetDataLength_0 chunkId:{}",chunkId)
 					stream.SetDataLength(chunkId, chunk0.dataLen)
 					if err == nil {
 						if chunk0.dataLen <= stream.maxBodySize {

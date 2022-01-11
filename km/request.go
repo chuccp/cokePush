@@ -194,12 +194,12 @@ func (conn *Conn) read() {
 					switch mq := ms.(type) {
 					case *messageQ:
 						{
-							log.InfoF("messageQ msgId:{}", msgId)
+							log.DebugF("messageQ msgId:{}", msgId)
 							mq.notify(msg)
 						}
 					case *messageB:
 						{
-							log.InfoF("messageB msgId:{}", msgId)
+							log.DebugF("messageB msgId:{}", msgId)
 							conn.msgChanMap.Delete(msgId)
 							mq.callBackFunc(msg, true, nil)
 						}
@@ -348,8 +348,6 @@ func (request *Request) Async(host string, port int, iMessage message.IMessage, 
 	if err != nil {
 		callBackFunc(nil, false, err)
 	} else {
-		rq.asyncWrite(iMessage, func(iMessage message.IMessage, b bool, err error) {
-			callBackFunc(iMessage, b, err)
-		})
+		rq.asyncWrite(iMessage,callBackFunc)
 	}
 }

@@ -1,7 +1,6 @@
 package km
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"sync"
@@ -29,7 +28,6 @@ func (km *km00001) ReadMessage() (message.IMessage, error) {
 func (km *km00001) WriteMessage(msg message.IMessage) (err error) {
 	km.lock.Lock()
 	defer km.lock.Unlock()
-	log.InfoF("写信息 {} class：{} type：{} msgId:{}",msg,msg.GetClassId(),msg.GetMessageType(),msg.GetMessageId())
 	chunkStream := createChunkWriteStreamPool(msg)
 	chunk := chunkStream.readChunk0()
 	err = km.writeChunk(chunk)
