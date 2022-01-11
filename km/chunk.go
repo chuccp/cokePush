@@ -109,9 +109,6 @@ func (chunk0 chunk0) toByte() []byte {
 	bytesArray := make([]byte, 0)
 	//写chunk
 	bytesArray = append(bytesArray, chunk0.chunk.toByte()...)
-
-	log.InfoF("chunk",chunk0.chunk.toByte())
-
 	//写header
 	bytesArray = append(bytesArray, chunk0.classId)
 	bytesArray = append(bytesArray, chunk0.messageType)
@@ -417,12 +414,14 @@ func (stream *chunkReadStream) readChunk() (uint16, bool, error) {
 				chunk0.messageLength, err = stream.readMessageLength()
 				stream.InitChunkRecord(chunkId, chunk0)
 				if chunk0.messageLength==0{
+					log.InfoF("messageLength_0  chunkId:{}",chunkId)
 					freePoolChunk0(chunk0)
 					return chunkId, true, nil
 				}
 				chunk0.key, err = stream.read_.ReadByte()
 				if err == nil {
 					chunk0.dataLen, err = stream.readMessageLength()
+					log.InfoF("SetDataLength_0 chunkId:{}",chunkId)
 					stream.SetDataLength(chunkId, chunk0.dataLen)
 					if err == nil {
 						if chunk0.dataLen <= stream.maxBodySize {
@@ -488,8 +487,8 @@ func (stream *chunkReadStream) readMessageLength() (uint32, error) {
 			if err == nil {
 				num = (num | 64) | uint32(data[0])
 				num = (num << 8) | uint32(data[1])
-				num = (num << 8) | uint32(data2[2])
-				num = (num << 8) | uint32(data2[3])
+				num = (num << 8) | uint32(data2[0])
+				num = (num << 8) | uint32(data2[1])
 			}
 			return num, err
 		}

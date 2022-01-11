@@ -29,9 +29,7 @@ func TestStream_ReadMessage(t *testing.T) {
 			}
 		}
 	}
-
 	time2 := time.Now()
-
 	t.Log(time2.Sub(time1))
 
 }
@@ -41,6 +39,8 @@ func TestStream_WriteMessage(t *testing.T) {
 
 	back:=message.CreateBackMessage(message.BackMessageClass,message.BackMessageOKType,message.MsgId())
 
+	live:=message.CreateLiveMessage()
+
 	fs, err := util.NewFileStream("D:\\attach\\bb.bin")
 	k := NewKm00001(net.NewIOStream2(fs))
 	time1 := time.Now()
@@ -49,6 +49,7 @@ func TestStream_WriteMessage(t *testing.T) {
 		k.WriteMessage(bm)
 		k.WriteMessage(back)
 		k.WriteMessage(bm)
+		k.WriteMessage(live)
 	}else{
 		log.InfoF("{}",err)
 	}

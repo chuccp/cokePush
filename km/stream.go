@@ -103,6 +103,7 @@ func (stream *Stream) ReadMessage() (message.IMessage, error) {
 }
 func (stream *Stream) WriteMessage(msg message.IMessage) error {
 	err:= stream.km.WriteMessage(msg)
+	log.InfoF("写信息结果 err：{}",err)
 	return err
 }
 

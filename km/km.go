@@ -1,8 +1,10 @@
 package km
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"sync"
 )
 
 type km interface {
@@ -12,10 +14,11 @@ type km interface {
 
 type km00001 struct {
 	readWrite *net.IONetStream
+	lock *sync.RWMutex
 }
 
 func NewKm00001(readWrite *net.IONetStream) *km00001 {
-	return &km00001{readWrite: readWrite}
+	return &km00001{readWrite: readWrite,lock:new(sync.RWMutex)}
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
 	chunkStream := createChunkReadStream(km.readWrite.IOReadStream)
@@ -23,25 +26,30 @@ func (km *km00001) ReadMessage() (message.IMessage, error) {
 	freeChunkReadStream(chunkStream)
 	return msg, err
 }
-func (km *km00001) WriteMessage(msg message.IMessage) error {
+func (km *km00001) WriteMessage(msg message.IMessage) (err error) {
+	km.lock.Lock()
+	defer km.lock.Unlock()
+	log.InfoF("写信息 {} class：{} type：{} msgId:{}",msg,msg.GetClassId(),msg.GetMessageType(),msg.GetMessageId())
 	chunkStream := createChunkWriteStreamPool(msg)
 	chunk := chunkStream.readChunk0()
-	err := km.writeChunk(chunk)
+	err = km.writeChunk(chunk)
 	if err != nil {
 		freeChunkWriteStream(chunkStream)
-		return err
+		return
 	}
 	for chunkStream.hasNext() {
 		chunk = chunkStream.readChunk()
-		err := km.writeChunk(chunk)
+		err = km.writeChunk(chunk)
 		if err != nil {
 			freeChunkWriteStream(chunkStream)
-			return err
+			return
 		}
 	}
 	freeChunkWriteStream(chunkStream)
-	km.readWrite.IOWriteStream.Flush()
-	return nil
+	if err==nil{
+		km.readWrite.IOWriteStream.Flush()
+	}
+	return
 }
 func (km *km00001) writeChunk(chunk IChunk) error {
 	_, err := km.readWrite.IOWriteStream.Write(chunk.toByte())
