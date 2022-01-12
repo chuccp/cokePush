@@ -23,11 +23,6 @@ func (server *Server) root(w http.ResponseWriter, re *http.Request) {
 	data, _ := ffjson.Marshal(dm)
 	w.Write(data)
 }
-
-func (server *Server) WriteMessage(iMessage message.IMessage) error {
-
-	return nil
-}
 func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	msg := util.GetMessage(re)
