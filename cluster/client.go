@@ -48,6 +48,24 @@ func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
 }
+func (client *Client) queryType(iMsg message.IMessage){
+	qname:=iMsg.GetString(message.QueryName)
+	iv:=make([]interface{},0)
+	keys:=iMsg.GetKeys()
+	for _,v:=range keys[1:]{
+		iv = append(iv,iMsg.GetString(v))
+	}
+	handle:=client.context.GetHandle(qname)
+	v:=handle(iv...)
+	if v!=nil{
+		data,_:=ffjson.Marshal(v)
+		qm:=backQueryOk(data,iMsg.GetMessageId())
+		client.stream.WriteMessage(qm)
+	}else{
+		qm:=backQueryError(iMsg.GetMessageId())
+		client.stream.WriteMessage(qm)
+	}
+}
 func (client *Client) queryMachineInfoType(iMsg message.IMessage) {
 
 	mi:=client.server.queryMachineInfo()
@@ -109,6 +127,8 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			machineId:=msg.GetString(message.MaChineId)
 			log.InfoF("收到删除用户：{}",username)
 			client.server.delete(username,machineId)
+		}else if messageType==message.QueryType{
+			client.queryType(msg)
 		}
 	case message.LiveMessageClass:
 		log.DebugF("LiveMessageClass：",msg.GetMessageId())

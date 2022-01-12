@@ -38,12 +38,31 @@ func newQueryMachineInfo() message.IMessage {
 	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineInfoType)}
 	return bm
 }
+func newQuery(queryName string,value ...string) message.IMessage {
+	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryType)}
+	bm.SetString(message.QueryName,queryName)
+	for i,v:=range value{
+		bm.SetString(byte(i),v)
+	}
+	return bm
+}
 
 func backQueryMachine(data []byte,msgId uint32)*queryMachineMessage  {
 	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageOKType,msgId)}
 	bm.SetValue(message.BackMachineAddress,data)
 	return bm
 }
+
+func backQueryOk(data []byte,msgId uint32)*queryMachineMessage  {
+	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageOKType,msgId)}
+	bm.SetValue(message.QueryData,data)
+	return bm
+}
+func backQueryError(msgId uint32)*queryMachineMessage  {
+	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageErrorType,msgId)}
+	return bm
+}
+
 func backQueryInfoMachine(data []byte,msgId uint32)*queryMachineMessage  {
 	bm := &queryMachineMessage{Message: message.CreateBackMessage(message.BackMessageClass, message.BackMessageOKType,msgId)}
 	bm.SetValue(message.QueryMachineInfo,data)

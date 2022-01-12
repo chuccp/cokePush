@@ -7,6 +7,7 @@ import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/cokePush/util"
 	"github.com/pquerna/ffjson/ffjson"
 	"strconv"
 	"strings"
@@ -50,6 +51,42 @@ func (server *Server) HandleAddUser(iUser user.IUser) {
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int){
 		server.request.JustCall(remoteHost,remotePort,msg)
 	})
+}
+func (server *Server) Query(value ...interface{}) interface{}{
+	log.InfoF("集群查询 {}",value)
+	queryName:=value[0].(string)
+	v:=value[1]
+	params :=make([]string,0)
+	if len(value)>2{
+		vs:=value[2:len(value)]
+		for _,vv:=range vs{
+			params = append(params,vv.(string) )
+		}
+	}
+	query:=newQuery(queryName, params...)
+	vvs:=make([]interface{},0)
+	vvs = append(vvs, v)
+	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
+		log.InfoF("集群查询 {}:{}",remoteHost,remotePort)
+		im,_,err:= server.request.Call(remoteHost,remotePort,query)
+		log.InfoF("集群查询 {}：{} err：{}",remoteHost,remotePort,err)
+		if err==nil{
+			if im.GetMessageType()==message.BackMessageOKType{
+				data:=im.GetValue(message.QueryData)
+				log.InfoF("集群查询 data: {}",string(data))
+				if len(data)>0{
+					var m =util.New(v)
+					err1:=ffjson.Unmarshal(data,&m)
+					if err1==nil{
+						vvs = append(vvs, m)
+					}else{
+						log.InfoF("集群查询 err1: {}",err1)
+					}
+				}
+			}
+		}
+	})
+	return vvs
 }
 func (server *Server) HandleDeleteUser(username string) {
 	msg:=newDeleteUserMessage(server.machineId,username)
@@ -164,10 +201,11 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 			}
 		}
 	})
-	mis = append(mis, server.queryMachineInfo())
+	vvv:=server.queryMachineInfo()
+	mis = append(mis, (vvv).(*MachineInfo))
 	return mis
 }
-func (server *Server) queryMachineInfo()*MachineInfo{
+func (server *Server) queryMachineInfo(value ...interface{})interface{}{
 	var mi MachineInfo
 	mi.Address = "localhost" + ":" + strconv.Itoa(server.port)
 	mi.MachineId = server.machineId
@@ -318,9 +356,16 @@ func (server *Server) Init(context *core.Context) {
 	context.HandleDeleteUser(server.HandleDeleteUser)
 	context.HandleSendMessage(server.HandleSendMessage)
 	context.RegisterHandle("machineInfo", server.machineInfo)
+	context.RegisterHandle("queryMachineInfo", server.queryMachineInfo)
+	context.RegisterHandle("machineInfoId", server.machineInfoId)
+	context.RegisterHandle("clusterQuery", server.Query)
 }
 func (server *Server) Name() string {
 	return "cluster"
+}
+
+func (server *Server) machineInfoId(value ...interface{}) interface{} {
+	return server.machineId
 }
 
 func NewServer() *Server {

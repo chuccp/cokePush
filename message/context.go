@@ -50,7 +50,7 @@ const (
 
 	QueryType = 8
 
-
+	QueryName = 1
 
 	// LiveMessageClass 心跳信息，用于心跳测试以及集群信息交流
 	LiveMessageClass byte = 3
@@ -65,7 +65,7 @@ const (
 
 	BackMachineAddress = 2
 
-	queryData = 3
+	QueryData = 3
 
 	// BackMessageErrorType 返回异常
 	BackMessageErrorType byte = 2

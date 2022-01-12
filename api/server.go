@@ -14,6 +14,7 @@ type Server struct {
 	serveMux *http.ServeMux
 	port     int
 	context  *core.Context
+	query *Query
 }
 
 func (server *Server) root(w http.ResponseWriter, re *http.Request) {
@@ -59,8 +60,20 @@ func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
 		w.Write([]byte("machineInfo not found"))
 	}
 }
+func (server *Server) queryUser(w http.ResponseWriter, re *http.Request){
 
+	username:=util.GetUsername(re)
+	value:=server.query.Query("QueryUser",username)
+	if value != nil {
+		data, _ := ffjson.Marshal(value)
+		w.Write(data)
+	} else {
+		w.Write([]byte("queryUser error"))
+	}
+
+}
 func (server *Server) Start() error {
+
 	srv := &http.Server{
 		Addr:    ":" + strconv.Itoa(server.port),
 		Handler: server.serveMux,
@@ -70,10 +83,12 @@ func (server *Server) Start() error {
 }
 func (server *Server) Init(context *core.Context) {
 	server.context = context
+	server.query = newQuery(context)
 	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
+	server.AddRoute("/queryUser", server.queryUser)
 	context.RegisterHandle("AddRoute", server.addRoute)
 }
 
