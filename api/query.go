@@ -31,27 +31,6 @@ func (query *Query) queryUser(value ...interface{}) interface{} {
 	})
 	return u
 }
-
-func (query *Query) Query(queryName string, value ...interface{}) interface{} {
-	handle := query.context.GetHandle(queryName)
-	v := handle(value...)
-	cluHandle:=query.context.GetHandle("clusterQuery")
-	if cluHandle!=nil{
-		iv:=make([]interface{},0)
-		iv = append(iv, queryName)
-		iv = append(iv, v)
-		for _,vi:=range value{
-			iv = append(iv, vi)
-		}
-		vs:=cluHandle(iv...)
-		return vs
-	}else{
-		vvs:=make([]interface{},0)
-		vvs = append(vvs, v)
-		return vvs
-	}
-}
-
 func (query *Query) Init() {
 	query.context.RegisterHandle("QueryUser", query.queryUser)
 }

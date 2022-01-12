@@ -355,10 +355,10 @@ func (server *Server) Init(context *core.Context) {
 	context.HandleAddUser(server.HandleAddUser)
 	context.HandleDeleteUser(server.HandleDeleteUser)
 	context.HandleSendMessage(server.HandleSendMessage)
+	context.QueryForwardHandle(server.Query)
 	context.RegisterHandle("machineInfo", server.machineInfo)
 	context.RegisterHandle("queryMachineInfo", server.queryMachineInfo)
 	context.RegisterHandle("machineInfoId", server.machineInfoId)
-	context.RegisterHandle("clusterQuery", server.Query)
 }
 func (server *Server) Name() string {
 	return "cluster"

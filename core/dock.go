@@ -24,7 +24,6 @@ type dock struct {
 func newDock() *dock {
 	return &dock{sendMsg: NewQueue(), UserStore: user.NewStore(), replyMsg: NewQueue()}
 }
-
 func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true

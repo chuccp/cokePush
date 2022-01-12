@@ -11,7 +11,8 @@ type registerHandle func(value ...interface{}) interface{}
 type Context struct {
 	handleFuncMap map[string]registerHandle
 	dock          *dock
-	config        *config.Config
+	config             *config.Config
+	queryForwardHandle registerHandle
 }
 
 func (context *Context) RegisterHandle(handleName string, handle registerHandle) {
@@ -30,6 +31,27 @@ func (context *Context) AddUser(iUser user.IUser) {
 func (context *Context) GetUser(username string,f func(user.IUser)bool) {
 	context.dock.UserStore.GetUser(username,f)
 }
+
+func (context *Context) Query(queryName string, value ...interface{}) interface{} {
+	handle := context.GetHandle(queryName)
+	v := handle(value...)
+	cluHandle:=context.queryForwardHandle
+	if cluHandle!=nil{
+		iv:=make([]interface{},0)
+		iv = append(iv, queryName)
+		iv = append(iv, v)
+		for _,vi:=range value{
+			iv = append(iv, vi)
+		}
+		vs:=cluHandle(iv...)
+		return vs
+	}else{
+		vvs:=make([]interface{},0)
+		vvs = append(vvs, v)
+		return vvs
+	}
+}
+
 func (context *Context) UserNum() int32{
 	return context.dock.UserNum()
 }
@@ -51,6 +73,9 @@ func (context *Context) HandleDeleteUser(handleDeleteUser HandleDeleteUser) {
 }
 func (context *Context) HandleSendMessage(handleSendMessage HandleSendMessage) {
 	context.dock.handleSendMessage = handleSendMessage
+}
+func (context *Context) QueryForwardHandle(queryHandle registerHandle) {
+	context.queryForwardHandle = queryHandle
 }
 
 func newContext(config *config.Config) *Context {
