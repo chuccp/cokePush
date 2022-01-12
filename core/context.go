@@ -68,6 +68,14 @@ func (context *Context) SendMessageNoForward(msg message.IMessage, write WriteFu
 func (context *Context) HandleAddUser(handleAddUser HandleAddUser) {
 	context.dock.handleAddUser = handleAddUser
 }
+
+func (context *Context) SendNum()int{
+	return context.dock.sendNum()
+}
+func (context *Context) ReplyNum()int{
+	return context.dock.replyNum()
+}
+
 func (context *Context) HandleDeleteUser(handleDeleteUser HandleDeleteUser) {
 	context.dock.handleDeleteUser = handleDeleteUser
 }

@@ -67,6 +67,16 @@ func (server *Server) queryUser(w http.ResponseWriter, re *http.Request){
 	}
 
 }
+func (server *Server) systemInfo(w http.ResponseWriter, re *http.Request){
+	value:=server.context.Query("systemInfo")
+	if value != nil {
+		data, _ := ffjson.Marshal(value)
+		w.Write(data)
+	} else {
+		w.Write([]byte("queryUser error"))
+	}
+}
+
 func (server *Server) Start() error {
 
 	srv := &http.Server{
@@ -84,6 +94,7 @@ func (server *Server) Init(context *core.Context) {
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
 	server.AddRoute("/queryUser", server.queryUser)
+	server.AddRoute("/systemInfo", server.systemInfo)
 	context.RegisterHandle("AddRoute", server.addRoute)
 }
 

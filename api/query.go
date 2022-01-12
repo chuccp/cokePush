@@ -19,6 +19,22 @@ func newQuery(context *core.Context) *Query {
 	q.Init()
 	return q
 }
+
+type SystemInfo struct {
+	SendMsgNum int
+	ReplayMsgNum int
+	Machine interface{}
+}
+func (query *Query) systemInfo(value ...interface{})interface{}{
+	var systemInfo SystemInfo
+	systemInfo.SendMsgNum = query.context.SendNum()
+	systemInfo.ReplayMsgNum = query.context.ReplyNum()
+	machineInfoId:=query.context.GetHandle("machineInfoId")
+	systemInfo.Machine = machineInfoId()
+	return &systemInfo
+}
+
+
 func (query *Query) queryUser(value ...interface{}) interface{} {
 	var u User
 	machineInfoId:=query.context.GetHandle("machineInfoId")
@@ -29,10 +45,11 @@ func (query *Query) queryUser(value ...interface{}) interface{} {
 		u.Id = user.GetId()
 		return true
 	})
-	return u
+	return &u
 }
 func (query *Query) Init() {
 	query.context.RegisterHandle("QueryUser", query.queryUser)
+	query.context.RegisterHandle("systemInfo", query.systemInfo)
 }
 
 type User struct {

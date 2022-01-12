@@ -19,6 +19,8 @@ type dock struct {
 	handleAddUser     HandleAddUser
 	handleDeleteUser  HandleDeleteUser
 	handleSendMessage HandleSendMessage
+	//sendIndexNum      uint32
+	//replyIndexNum     uint32
 }
 
 func newDock() *dock {
@@ -88,7 +90,6 @@ func (dock *dock) replyMessage(msg *DockMessage) {
 }
 func (dock *dock) exchangeReplyMsg() {
 	log.DebugF("启动信息反馈处理")
-	var i = 0
 	for {
 		msg := dock.replyMsg.poll()
 		log.DebugF("处理反馈信息：{}",msg.InputMessage.GetMessageId())
@@ -96,17 +97,25 @@ func (dock *dock) exchangeReplyMsg() {
 			msg.write(msg.err, msg.flag)
 		}
 		log.DebugF("处理反馈信息：{} 完成",msg.InputMessage.GetMessageId())
-		i++
-		if i>>10 == 1 {
-			i = 0
-			log.InfoF("当前反馈池剩下 :{} 未处理", dock.replyMsg.Num())
-		}
+
+		//atomic.AddUint32(&(dock.replyIndexNum),1)
+		//if atomic.LoadUint32(&(dock.replyIndexNum))>>10 == 1 {
+		//	atomic.StoreUint32(&(dock.replyIndexNum),0)
+		//	log.InfoF("当前反馈池剩下 :{} 未处理", dock.sendMsg.Num())
+		//}
 	}
 }
+func (dock *dock) sendNum()int{
 
+	return dock.sendMsg.Num()
+}
+func (dock *dock) replyNum()int{
+
+	return dock.replyMsg.Num()
+}
 func (dock *dock) exchangeSendMsg() {
 	log.DebugF("启动信息发送处理")
-	var i = 0
+
 	for {
 		msg := dock.sendMsg.poll()
 		if msg != nil {
@@ -118,10 +127,10 @@ func (dock *dock) exchangeSendMsg() {
 				dock.replyMessage(msg)
 			}
 		}
-		i++
-		if i>>10 == 1 {
-			i = 0
-			log.InfoF("当前信息池剩下 :{} 未处理", dock.sendMsg.Num())
-		}
+		//atomic.AddUint32(&(dock.sendIndexNum),1)
+		//if atomic.LoadUint32(&(dock.sendIndexNum))>>10 == 1 {
+		//	atomic.StoreUint32(&(dock.sendIndexNum),0)
+		//	log.InfoF("当前信息池剩下 :{} 未处理", dock.sendMsg.Num())
+		//}
 	}
 }
