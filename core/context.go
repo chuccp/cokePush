@@ -4,12 +4,16 @@ import (
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/cokePush/util"
 )
 
 type registerHandle func(value ...interface{}) interface{}
 
+type registerQueryHandle func(value ...interface{}) util.Gob
+
 type Context struct {
 	handleFuncMap map[string]registerHandle
+	queryHandleFuncMap map[string]registerQueryHandle
 	dock          *dock
 	config             *config.Config
 	queryForwardHandle registerHandle
@@ -18,10 +22,15 @@ type Context struct {
 func (context *Context) RegisterHandle(handleName string, handle registerHandle) {
 	context.handleFuncMap[handleName] = handle
 }
+func (context *Context) RegisterQueryHandle(handleName string, handle registerQueryHandle) {
+	context.queryHandleFuncMap[handleName] = handle
+}
+func (context *Context) GetQueryHandle(handleName string) registerQueryHandle {
+	return context.queryHandleFuncMap[handleName]
+}
 func (context *Context) GetHandle(handleName string) registerHandle {
 	return context.handleFuncMap[handleName]
 }
-
 func (context *Context) GetConfig() *config.Config {
 	return context.config
 }
@@ -33,7 +42,7 @@ func (context *Context) GetUser(username string,f func(user.IUser)bool) {
 }
 
 func (context *Context) Query(queryName string, value ...interface{}) interface{} {
-	handle := context.GetHandle(queryName)
+	handle := context.GetQueryHandle(queryName)
 	v := handle(value...)
 	cluHandle:=context.queryForwardHandle
 	if cluHandle!=nil{
@@ -87,7 +96,7 @@ func (context *Context) QueryForwardHandle(queryHandle registerHandle) {
 }
 
 func newContext(config *config.Config) *Context {
-	return &Context{handleFuncMap: make(map[string]registerHandle), dock: newDock(), config: config}
+	return &Context{handleFuncMap: make(map[string]registerHandle),queryHandleFuncMap: make(map[string]registerQueryHandle), dock: newDock(), config: config}
 }
 func (context *Context) Init() {
 	go context.dock.exchangeSendMsg()

@@ -4,21 +4,26 @@ import (
 	"reflect"
 )
 
-func New(v interface{}) interface{} {
+type  Gob interface {
+	NewValue()interface{}
+}
+
+func NewPtr(v interface{}) interface{} {
 	type_ := reflect.TypeOf(v)
 	switch type_.Kind() {
 	case reflect.Ptr:
-		u := (reflect.New(type_.Elem())).Elem().Interface()
-		return u
+		return newPtr(type_.Elem())
 	case reflect.Struct:
-		u := (reflect.New(type_)).Elem().Interface()
-		return u
+		return newPtr(type_)
 	}
 	return nil
-
 }
-
-func NewByType(type_ reflect.Type) interface{} {
-	u := (reflect.New(type_)).Elem().Interface()
-	return u
+func newPtr(type_ reflect.Type) interface{}{
+	value:=reflect.New(type_)
+	v:=value.MethodByName("NewValue")
+	if v.IsValid(){
+		return v.Call(nil)[0].Interface()
+	}
+	u:=value.Interface()
+	return &u
 }

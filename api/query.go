@@ -4,6 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/cokePush/util"
 )
 
 const (
@@ -25,7 +26,12 @@ type SystemInfo struct {
 	ReplayMsgNum int
 	Machine interface{}
 }
-func (query *Query) systemInfo(value ...interface{})interface{}{
+// NewValue go gob要求/**/
+func (u *SystemInfo)NewValue()interface{}  {
+	var nu SystemInfo
+	return &nu
+}
+func (query *Query) systemInfo(value ...interface{})util.Gob{
 	var systemInfo SystemInfo
 	systemInfo.SendMsgNum = query.context.SendNum()
 	systemInfo.ReplayMsgNum = query.context.ReplyNum()
@@ -35,7 +41,7 @@ func (query *Query) systemInfo(value ...interface{})interface{}{
 }
 
 
-func (query *Query) queryUser(value ...interface{}) interface{} {
+func (query *Query) queryUser(value ...interface{}) util.Gob {
 	var u User
 	machineInfoId:=query.context.GetHandle("machineInfoId")
 	u.Machine=machineInfoId()
@@ -50,8 +56,8 @@ func (query *Query) queryUser(value ...interface{}) interface{} {
 	return &u
 }
 func (query *Query) Init() {
-	query.context.RegisterHandle("QueryUser", query.queryUser)
-	query.context.RegisterHandle("systemInfo", query.systemInfo)
+	query.context.RegisterQueryHandle("QueryUser", query.queryUser)
+	query.context.RegisterQueryHandle("systemInfo", query.systemInfo)
 }
 
 type User struct {
@@ -59,4 +65,11 @@ type User struct {
 	Id string
 	RemoteAddress []string
 	Machine interface{}
+}
+
+// NewValue go gob要求/**/
+func (u *User)NewValue()interface{}  {
+	var nu User
+	nu.RemoteAddress = make([]string,0)
+	return &nu
 }

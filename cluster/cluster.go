@@ -1,6 +1,8 @@
 package cluster
 
 import (
+	"bytes"
+	"encoding/gob"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
@@ -8,7 +10,7 @@ import (
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
-	"github.com/pquerna/ffjson/ffjson"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -73,14 +75,15 @@ func (server *Server) Query(value ...interface{}) interface{}{
 		if err==nil{
 			if im.GetMessageType()==message.BackMessageOKType{
 				data:=im.GetValue(message.QueryData)
-				log.InfoF("集群查询 data: {}",string(data))
 				if len(data)>0{
-					var m =util.New(v)
-					err1:=ffjson.Unmarshal(data,&m)
+					var m =util.NewPtr(v)
+					var read  = bytes.NewReader(data)
+					dec:=gob.NewDecoder(read)
+					err1 := dec.Decode(m)
 					if err1==nil{
 						vvs = append(vvs, m)
 					}else{
-						log.InfoF("集群查询 err1: {}",err1)
+						log.InfoF("type:{},集群查询 err1: {}",reflect.TypeOf(m),err1)
 					}
 				}
 			}
@@ -193,10 +196,15 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 			data:=im.GetValue(message.QueryMachineInfo)
 			if len(data)>0{
 				var mi MachineInfo
-				err:=ffjson.Unmarshal(data,&mi)
+				var read  = bytes.NewReader(data)
+				dec:=gob.NewDecoder(read)
+				err1 := dec.Decode(&mi)
 				mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
-				if err==nil{
+
+				if err1==nil{
 					mis = append(mis,&mi)
+				}else{
+					log.InfoF("gob 转换错误：{}",err1)
 				}
 			}
 		}
