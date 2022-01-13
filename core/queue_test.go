@@ -42,7 +42,7 @@ func (queue *queue) Offer(value interface{}) int32 {
 	} else {
 		queue.rLock.Lock()
 		queue.input.next = ele
-		ele.prev = queue.input
+		//ele.prev = queue.input
 		queue.input = ele
 		queue.rLock.Unlock()
 	}
@@ -57,13 +57,15 @@ func (queue *queue) Poll() (interface{}, int32) {
 		v := atomic.LoadInt32(&queue.isHas)
 		if v == 1 {
 			var ele = queue.output
-			queue.output = queue.output.next
+			queue.output = ele.next
+			ele.next = nil
 			num := atomic.AddInt32(&queue.num, -1)
 			if num == 0 {
 				atomic.StoreInt32(&queue.isHas, 0)
-			}else{
-				queue.output.prev = nil
 			}
+			//else{
+			//	queue.output.prev = nil
+			//}
 			return ele.value, num
 		} else {
 			atomic.StoreInt32(&(queue.isWait), 1)
