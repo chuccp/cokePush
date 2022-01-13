@@ -8,11 +8,17 @@ import (
 
 type UU struct {
 	AAA string
+	BBB string
+	CCC string
+	DDD string
 }
+
 func (u *UU)NewValue()interface{}  {
 	var nu UU
 	return &nu
 }
+
+
 func Test_endoc(t *testing.T)  {
   var v  UU
   v.AAA = "123"

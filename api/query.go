@@ -4,7 +4,6 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/user"
-	"github.com/chuccp/cokePush/util"
 )
 
 const (
@@ -31,7 +30,7 @@ func (u *SystemInfo)NewValue()interface{}  {
 	var nu SystemInfo
 	return &nu
 }
-func (query *Query) systemInfo(value ...interface{})util.Gob{
+func (query *Query) systemInfo(value ...interface{})interface{}{
 	var systemInfo SystemInfo
 	systemInfo.SendMsgNum = query.context.SendNum()
 	systemInfo.ReplayMsgNum = query.context.ReplyNum()
@@ -41,7 +40,7 @@ func (query *Query) systemInfo(value ...interface{})util.Gob{
 }
 
 
-func (query *Query) queryUser(value ...interface{}) util.Gob {
+func (query *Query) queryUser(value ...interface{}) interface{}{
 	var u User
 	machineInfoId:=query.context.GetHandle("machineInfoId")
 	u.Machine=machineInfoId()
@@ -56,8 +55,8 @@ func (query *Query) queryUser(value ...interface{}) util.Gob {
 	return &u
 }
 func (query *Query) Init() {
-	query.context.RegisterQueryHandle("QueryUser", query.queryUser)
-	query.context.RegisterQueryHandle("systemInfo", query.systemInfo)
+	query.context.RegisterHandle("QueryUser", query.queryUser)
+	query.context.RegisterHandle("systemInfo", query.systemInfo)
 }
 
 type User struct {

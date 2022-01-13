@@ -1,8 +1,6 @@
 package cluster
 
 import (
-	"bytes"
-	"encoding/gob"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
@@ -10,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
+	"github.com/pquerna/ffjson/ffjson"
 	"reflect"
 	"strconv"
 	"strings"
@@ -77,9 +76,7 @@ func (server *Server) Query(value ...interface{}) interface{}{
 				data:=im.GetValue(message.QueryData)
 				if len(data)>0{
 					var m =util.NewPtr(v)
-					var read  = bytes.NewReader(data)
-					dec:=gob.NewDecoder(read)
-					err1 := dec.Decode(m)
+					err1:=ffjson.Unmarshal(data,m)
 					if err1==nil{
 						vvs = append(vvs, m)
 					}else{
@@ -196,12 +193,9 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 			data:=im.GetValue(message.QueryMachineInfo)
 			if len(data)>0{
 				var mi MachineInfo
-				var read  = bytes.NewReader(data)
-				dec:=gob.NewDecoder(read)
-				err1 := dec.Decode(&mi)
-				mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
-
+				err1:=ffjson.Unmarshal(data,&mi)
 				if err1==nil{
+					mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
 					mis = append(mis,&mi)
 				}else{
 					log.InfoF("gob 转换错误：{}",err1)

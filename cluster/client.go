@@ -2,12 +2,12 @@ package cluster
 
 import (
 	"bytes"
-	"encoding/gob"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"github.com/pquerna/ffjson/ffjson"
 )
 
 type Client struct {
@@ -55,15 +55,12 @@ func (client *Client) queryType(iMsg message.IMessage){
 	for _,v:=range keys[1:]{
 		iv = append(iv,iMsg.GetString(v))
 	}
-	handle:=client.context.GetQueryHandle(qname)
+	handle:=client.context.GetHandle(qname)
 	v:=handle(iv...)
 	if v!=nil{
-
-		var data bytes.Buffer
-		enc := gob.NewEncoder(&data)
-		err:=enc.Encode(v)
+		data,err:=ffjson.Marshal(v)
 		if err==nil{
-			qm:=backQueryOk(data.Bytes(),iMsg.GetMessageId())
+			qm:=backQueryOk(data,iMsg.GetMessageId())
 			client.stream.WriteMessage(qm)
 		}else{
 			log.InfoF("gob 序列化失败：{}",err)
@@ -78,11 +75,9 @@ func (client *Client) queryType(iMsg message.IMessage){
 }
 func (client *Client) queryMachineInfoType(iMsg message.IMessage) {
 	mi:=client.server.queryMachineInfo()
-	var data bytes.Buffer
-	enc := gob.NewEncoder(&data)
-	err:=enc.Encode(mi)
+	data,err:=ffjson.Marshal(mi)
 	if err==nil{
-		msg := backQueryInfoMachine(data.Bytes(), iMsg.GetMessageId())
+		msg := backQueryInfoMachine(data, iMsg.GetMessageId())
 		client.stream.WriteMessage(msg)
 	}else{
 		msg := backQueryInfoMachine([]byte(`{"Address":"`+client.server.machineId+`@`+err.Error()+`"}`), iMsg.GetMessageId())
