@@ -1,13 +1,11 @@
 package tcp
 
 import (
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/net"
 )
 
 type Server struct {
-	config    *config.Config
 	tcpserver *net.TCPServer
 	port      int
 	context *core.Context
@@ -15,7 +13,7 @@ type Server struct {
 
 func (server *Server) Init(context *core.Context) {
 	server.context = context
-	server.port = server.config.GetIntOrDefault("tcp.server.port", 6464)
+	server.port = context.GetConfig().GetIntOrDefault("tcp.server.port", 6464)
 	server.tcpserver = net.NewTCPServer(server.port)
 }
 func (server *Server) Start() error {
@@ -43,4 +41,7 @@ func (server *Server) AcceptConn() {
 func (server *Server) Name() string {
 
 	return "TCP"
+}
+func NewServer() *Server {
+	return &Server{ port: -1}
 }

@@ -39,10 +39,12 @@ func (query *Query) queryUser(value ...interface{}) interface{} {
 	var u User
 	machineInfoId:=query.context.GetHandle("machineInfoId")
 	u.Machine=machineInfoId()
+	u.RemoteAddress = make([]string,0)
 	query.context.GetUser(value[0].(string), func(user user.IUser) bool {
 		log.Info(user.GetUsername())
 		u.Username = user.GetUsername()
 		u.Id = user.GetId()
+		u.RemoteAddress = append(u.RemoteAddress, user.GetRemoteAddress())
 		return true
 	})
 	return &u
@@ -55,5 +57,6 @@ func (query *Query) Init() {
 type User struct {
 	Username string
 	Id string
+	RemoteAddress []string
 	Machine interface{}
 }

@@ -4,6 +4,6 @@ import "testing"
 
 func TestCompare(t *testing.T) {
 
-	t.Log("412">"51")
+	t.Log(Compare("3.0.1","3.10.1"))
 
 }

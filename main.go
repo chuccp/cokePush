@@ -7,6 +7,7 @@ import (
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/ex"
+	"github.com/chuccp/cokePush/tcp"
 	"github.com/magiconair/properties"
 )
 
@@ -15,6 +16,7 @@ func DefaultRegister() *core.Register {
 	if err == nil {
 		var defaultRegister = core.NewRegister(cfg)
 		defaultRegister.AddServer(api.NewServer())
+		defaultRegister.AddServer(tcp.NewServer())
 		defaultRegister.AddServer(cluster.NewServer())
 		defaultRegister.AddServer(ex.NewServer())
 		return defaultRegister

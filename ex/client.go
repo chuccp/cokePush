@@ -25,14 +25,14 @@ func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 	if ok {
 		ct := v.(*client)
 		if !ct.poll(w){
-			store.createUser(userId, w)
+			store.createUser(userId, w,re)
 		}
 	} else {
-		store.createUser(userId, w)
+		store.createUser(userId, w,re)
 	}
 }
-func (store *store) createUser(userId string, w http.ResponseWriter) {
-	client := NewClient(store.context, userId)
+func (store *store) createUser(userId string, w http.ResponseWriter,re *http.Request) {
+	client := NewClient(store.context, userId,re.RemoteAddr)
 	store.context.AddUser(client)
 	store.rLock.RLock()
 	store.clientMap.Store(userId, client)
@@ -82,14 +82,19 @@ type client struct {
 	userId   string
 	intPut   int
 	hasClose bool
+	remoteAddress string
 	last     *time.Time
 	rLock *sync.RWMutex
 }
 
-func NewClient(context *core.Context, username string) *client {
-	c := &client{queue: core.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex)}
+
+func NewClient(context *core.Context, username string,remoteAddress string) *client {
+	c := &client{queue: core.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex),remoteAddress:remoteAddress}
 	c.userId = username + strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))), 36)
 	return c
+}
+func (client *client) GetRemoteAddress() string {
+	return client.remoteAddress
 }
 
 func (client *client) WriteMessage(iMessage message.IMessage) error {

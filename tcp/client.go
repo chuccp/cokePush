@@ -17,6 +17,11 @@ type client struct {
 	id string
 	username string
 }
+
+func (client *client) GetRemoteAddress() string {
+	return client.stream.RemoteAddr().String()
+}
+
 func NewClient(stream *net.IONetStream,context *core.Context) (*client, error) {
 	kmStream, err := km.NewStream(stream)
 	client:=&client{stream: kmStream,context:context }
