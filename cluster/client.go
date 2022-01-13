@@ -56,6 +56,12 @@ func (client *Client) queryType(iMsg message.IMessage){
 		iv = append(iv,iMsg.GetString(v))
 	}
 	handle:=client.context.GetHandle(qname)
+	if handle==nil{
+		log.ErrorF("can not find handle:{}",qname)
+		qm:=backQueryError(iMsg.GetMessageId())
+		client.stream.WriteMessage(qm)
+		return
+	}
 	v:=handle(iv...)
 	if v!=nil{
 		data,err:=ffjson.Marshal(v)
@@ -63,7 +69,6 @@ func (client *Client) queryType(iMsg message.IMessage){
 			qm:=backQueryOk(data,iMsg.GetMessageId())
 			client.stream.WriteMessage(qm)
 		}else{
-			log.InfoF("gob 序列化失败：{}",err)
 			qm:=backQueryError(iMsg.GetMessageId())
 			client.stream.WriteMessage(qm)
 		}

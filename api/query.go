@@ -55,7 +55,7 @@ func (query *Query) queryUser(value ...interface{}) interface{}{
 	return &u
 }
 func (query *Query) Init() {
-	query.context.RegisterHandle("QueryUser", query.queryUser)
+	query.context.RegisterHandle("queryUser", query.queryUser)
 	query.context.RegisterHandle("systemInfo", query.systemInfo)
 }
 

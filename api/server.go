@@ -58,7 +58,7 @@ func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
 func (server *Server) queryUser(w http.ResponseWriter, re *http.Request){
 
 	username:=util.GetUsername(re)
-	value:=server.context.Query("QueryUser",username)
+	value:=server.context.Query("queryUser",username)
 	if value != nil {
 		data, _ := ffjson.Marshal(value)
 		w.Write(data)
