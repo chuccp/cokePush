@@ -70,10 +70,10 @@ func (context *Context) HandleAddUser(handleAddUser HandleAddUser) {
 	context.dock.handleAddUser = handleAddUser
 }
 
-func (context *Context) SendNum()int{
+func (context *Context) SendNum()int32{
 	return context.dock.sendNum()
 }
-func (context *Context) ReplyNum()int{
+func (context *Context) ReplyNum()int32{
 	return context.dock.replyNum()
 }
 

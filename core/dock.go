@@ -4,6 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/cokePush/util"
 )
 
 type WriteFunc func(err error, hasUser bool)
@@ -13,8 +14,8 @@ type HandleDeleteUser func(username string)
 type HandleSendMessage func(iMessage *DockMessage, writeFunc WriteFunc)
 
 type dock struct {
-	sendMsg           *Queue
-	replyMsg          *Queue
+	sendMsg           *util.Queue
+	replyMsg          *util.Queue
 	UserStore         *user.Store
 	handleAddUser     HandleAddUser
 	handleDeleteUser  HandleDeleteUser
@@ -24,17 +25,17 @@ type dock struct {
 }
 
 func newDock() *dock {
-	return &dock{sendMsg: NewQueue(), UserStore: user.NewStore(), replyMsg: NewQueue()}
+	return &dock{sendMsg:util.NewQueue(), UserStore: user.NewStore(), replyMsg: util.NewQueue()}
 }
 func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true
-	dock.sendMsg.offer(msg)
+	dock.sendMsg.Offer(msg)
 }
 func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = false
-	dock.sendMsg.offer(msg)
+	dock.sendMsg.Offer(msg)
 }
 
 func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
@@ -86,30 +87,25 @@ func (dock *dock) UserNum()int32 {
 
 func (dock *dock) replyMessage(msg *DockMessage) {
 	log.DebugF("加入消息反馈队列:{}",msg.InputMessage.GetMessageId())
-	dock.replyMsg.offer(msg)
+	dock.replyMsg.Offer(msg)
 }
 func (dock *dock) exchangeReplyMsg() {
 	log.DebugF("启动信息反馈处理")
 	for {
-		msg := dock.replyMsg.poll()
-		log.DebugF("处理反馈信息：{}",msg.InputMessage.GetMessageId())
+		msg,_ := dock.replyMsg.Poll()
+		dockMessage:=msg.(*DockMessage)
+		log.DebugF("处理反馈信息：{}",dockMessage.InputMessage.GetMessageId())
 		if msg != nil {
-			msg.write(msg.err, msg.flag)
+			dockMessage.write(dockMessage.err, dockMessage.flag)
 		}
-		log.DebugF("处理反馈信息：{} 完成",msg.InputMessage.GetMessageId())
-
-		//atomic.AddUint32(&(dock.replyIndexNum),1)
-		//if atomic.LoadUint32(&(dock.replyIndexNum))>>10 == 1 {
-		//	atomic.StoreUint32(&(dock.replyIndexNum),0)
-		//	log.InfoF("当前反馈池剩下 :{} 未处理", dock.sendMsg.Num())
-		//}
+		log.DebugF("处理反馈信息：{} 完成",dockMessage.InputMessage.GetMessageId())
 	}
 }
-func (dock *dock) sendNum()int{
+func (dock *dock) sendNum()int32{
 
 	return dock.sendMsg.Num()
 }
-func (dock *dock) replyNum()int{
+func (dock *dock) replyNum()int32{
 
 	return dock.replyMsg.Num()
 }
@@ -117,20 +113,16 @@ func (dock *dock) exchangeSendMsg() {
 	log.DebugF("启动信息发送处理")
 
 	for {
-		msg := dock.sendMsg.poll()
+		msg,_ := dock.sendMsg.Poll()
 		if msg != nil {
-			fa, err := dock.writeUserMsg(msg)
-			if !msg.IsForward || fa{
+			dm:=msg.(*DockMessage)
+			fa, err := dock.writeUserMsg(dm)
+			if !dm.IsForward || fa{
 				log.DebugF("fa:{} err:{}", fa, err)
-				msg.flag = fa
-				msg.err = err
-				dock.replyMessage(msg)
+				dm.flag = fa
+				dm.err = err
+				dock.replyMessage(dm)
 			}
 		}
-		//atomic.AddUint32(&(dock.sendIndexNum),1)
-		//if atomic.LoadUint32(&(dock.sendIndexNum))>>10 == 1 {
-		//	atomic.StoreUint32(&(dock.sendIndexNum),0)
-		//	log.InfoF("当前信息池剩下 :{} 未处理", dock.sendMsg.Num())
-		//}
 	}
 }

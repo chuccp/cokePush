@@ -1,10 +1,8 @@
-package core
+package util
 
 import (
-	log "github.com/chuccp/coke-log"
 	"sync"
 	"sync/atomic"
-	"testing"
 	"time"
 )
 
@@ -17,7 +15,7 @@ func newElement(value interface{}) *element {
 	return &element{value: value}
 }
 
-type queue struct {
+type Queue struct {
 	input  *element
 	output *element
 	ch     chan bool
@@ -73,10 +71,10 @@ func freeTimer(timer *timer) {
 	poolTimer.Put(timer)
 }
 
-func newQueue() *queue {
-	return &queue{ch: make(chan bool), isWait: false, num: 0, rLock: new(sync.RWMutex)}
+func NewQueue() *Queue {
+	return &Queue{ch: make(chan bool), isWait: false, num: 0, rLock: new(sync.RWMutex)}
 }
-func (queue *queue) Offer(value interface{}) (num int32) {
+func (queue *Queue) Offer(value interface{}) (num int32) {
 	ele := newElement(value)
 	queue.rLock.Lock()
 	if queue.num == 0 {
@@ -96,7 +94,10 @@ func (queue *queue) Offer(value interface{}) (num int32) {
 	}
 	return
 }
-func (queue *queue) Poll() (value interface{}, num int32) {
+func (queue *Queue) Num()int32{
+	return queue.num
+}
+func (queue *Queue) Poll() (value interface{}, num int32) {
 	for {
 		queue.rLock.Lock()
 		if queue.num > 0 {
@@ -123,7 +124,7 @@ func (queue *queue) Poll() (value interface{}, num int32) {
 	}
 }
 
-func (queue *queue) Take(duration time.Duration) (value interface{}, num int32) {
+func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) {
 	for {
 		queue.rLock.Lock()
 		if queue.num > 0 {
@@ -167,27 +168,4 @@ func (queue *queue) Take(duration time.Duration) (value interface{}, num int32) 
 	}
 }
 
-func TestCompare(t *testing.T) {
-	que := newQueue()
-	go func() {
-		for i:=0;i<100;i++{
-			go func() {
-				que.Offer(1)
-			}()
-		}
-		time.Sleep(time.Second*5)
-		for i:=0;i<100;i++{
-			go func() {
-				que.Offer(1)
-			}()
-		}
-	}()
 
-	for{
-		v,num:=que.Take(time.Second)
-		log.Info(v,"=========",num)
-	}
-
-
-
-}

@@ -21,8 +21,8 @@ func newQuery(context *core.Context) *Query {
 }
 
 type SystemInfo struct {
-	SendMsgNum int
-	ReplayMsgNum int
+	SendMsgNum int32
+	ReplayMsgNum int32
 	Machine interface{}
 }
 // NewValue go gob要求/**/

@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 	"unsafe"
 )
@@ -76,11 +77,11 @@ func newStore(context *core.Context) *store {
 }
 
 type client struct {
-	queue    *core.Queue
+	queue    *util.Queue
 	context  *core.Context
 	username string
 	userId   string
-	intPut   int
+	intPut   int32
 	hasClose bool
 	remoteAddress string
 	last     *time.Time
@@ -89,7 +90,7 @@ type client struct {
 
 
 func NewClient(context *core.Context, username string,remoteAddress string) *client {
-	c := &client{queue: core.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex),remoteAddress:remoteAddress}
+	c := &client{queue: util.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex),remoteAddress:remoteAddress}
 	c.userId = username + strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))), 36)
 	return c
 }
@@ -126,15 +127,18 @@ func (client *client) poll(w http.ResponseWriter) bool {
 		client.rLock.RUnlock()
 		return false
 	}
-	client.intPut++
+	atomic.AddInt32(&client.intPut,1)
 	client.rLock.RUnlock()
-	msg := client.queue.Poll(time.Second * 20)
+	msg,_ := client.queue.Take(time.Second * 20)
 	if msg != nil {
-		w.Write(msg.GetValue(message.Text))
+		m:=msg.(message.IMessage)
+		w.Write(m.GetValue(message.Text))
+	}else{
+		w.Write([]byte("[]"))
 	}
 	client.rLock.RLock()
-	client.intPut--
-	if client.intPut == 0 {
+	atomic.AddInt32(&client.intPut,-1)
+	if atomic.LoadInt32(&client.intPut) == 0 {
 		t := time.Now().Add(time.Second * 10)
 		client.last = &t
 	}
