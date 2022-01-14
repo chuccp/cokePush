@@ -1,13 +1,14 @@
 package km
 
 import (
+	"fmt"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
-	"sync"
 	"testing"
 	"time"
+	"unsafe"
 )
 
 /**
@@ -76,14 +77,21 @@ func Test_chan(t *testing.T)  {
 	t.Log(m.fa)
 
 }
+func ccc(h map[int]int,t *testing.T)  {
+	go func() {
+		time.Sleep(time.Second)
+		t.Log("ccc",(h)[1],unsafe.Pointer(&h))
+		fmt.Printf("实际参数的地址 %p\n", &h)
+	}()
+
+}
 func TestChan(t *testing.T)  {
+	chunkMap:=make(map[int]int)
+	var h = chunkMap
+	ccc(h,t)
 
-
-	var machineMap sync.Map
-	v,fa:=machineMap.LoadOrStore(1,1)
-	t.Log(v,fa)
-	v,fa=machineMap.LoadOrStore(1,1)
-	t.Log(v,fa)
-	v,fa=machineMap.LoadOrStore(1,1)
-	t.Log(v,fa)
+	chunkMap[1]=1
+	t.Log("TestChan",h[1], unsafe.Pointer(&h))
+	fmt.Printf("实际参数的地址 %p\n", &h)
+	time.Sleep(time.Second*10)
 }

@@ -14,13 +14,14 @@ type km interface {
 type km00001 struct {
 	readWrite *net.IONetStream
 	lock *sync.RWMutex
+	chunkMap map[uint16]*chunkRecord
 }
 
 func NewKm00001(readWrite *net.IONetStream) *km00001 {
-	return &km00001{readWrite: readWrite,lock:new(sync.RWMutex)}
+	return &km00001{readWrite: readWrite,lock:new(sync.RWMutex),chunkMap:make(map[uint16]*chunkRecord)}
 }
 func (km *km00001) ReadMessage() (message.IMessage, error) {
-	chunkStream := createChunkReadStream(km.readWrite.IOReadStream)
+	chunkStream := createChunkReadStream(km.readWrite.IOReadStream,km.chunkMap)
 	msg, err := chunkStream.readMessage()
 	freeChunkReadStream(chunkStream)
 	return msg, err

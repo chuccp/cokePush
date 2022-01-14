@@ -44,11 +44,11 @@ func createChunkWriteStreamPool(msg message.IMessage) *chunkWriteStream {
 	chunkWriteStream.rMessageLength = 0
 	return chunkWriteStream
 }
-func createChunkReadStream(read_ *net.IOReadStream) *chunkReadStream {
+func createChunkReadStream(read_ *net.IOReadStream,chunkMap map[uint16]*chunkRecord) *chunkReadStream {
 	var chunkReadStream = chunkReadStreamPool.Get().(*chunkReadStream)
 	chunkReadStream.read_ =read_
 	chunkReadStream.maxBodySize = 512
-	chunkReadStream.recordMap = make(map[uint16]*chunkRecord)
+	chunkReadStream.recordMap = chunkMap
 	return chunkReadStream
 }
 func freeChunkWriteStream(crm *chunkWriteStream) {
