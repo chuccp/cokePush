@@ -97,15 +97,14 @@ func TestChan(t *testing.T)  {
 }
 func TestLength(t *testing.T) {
 
-	data:=lengthToBytes(32_768)
+	data:=lengthToBytes(32_767)
 	for _,k:=range data{
 		t.Logf("%b\n",k)
 	}
 
 	num :=  uint32(data[0])&127
+	num = uint32(data[0])
 	num = (num << 8) | uint32(data[1])
-	num = (num << 8) | uint32(data[2])
-	num = (num << 8) | uint32(data[3])
 
 	log.Info(num)
 }

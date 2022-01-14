@@ -104,13 +104,13 @@ func (server *Server)delete(username string,machineId string)  {
 	server.userStore.DeleteUser(username)
 }
 func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)  {
-	server.sendStoreMachineDockMessage(iMessage, func(err error, hasUser bool) {
+	server.sendStoreMachineDockMessage(iMessage, func(err error, hasUser bool,host string,port int) {
 		if hasUser{
 			log.InfoF("找到用户，直接发送:{}",iMessage.GetToUsername())
 			writeFunc(err,hasUser)
 		}else{
 			log.InfoF("没找到用户，全局发送:{}",iMessage.GetToUsername())
-			flag:=server.sendAllMachineDockMessage(iMessage,writeFunc)
+			flag:=server.sendAllMachineDockMessage(iMessage,writeFunc,"",0)
 			if !flag{
 				writeFunc(nil,false)
 			}
@@ -118,7 +118,7 @@ func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc co
 	})
 }
 
-func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc){
+func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f func(err error, hasUser bool,host string,port int)){
 	username:=iMessage.GetToUsername()
 	u,ok:=server.userStore.GetUserMachine(username)
 	if ok{
@@ -126,32 +126,35 @@ func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage, wri
 			if hasReplay{
 				ty:=replayMessage.GetMessageType()
 				if ty==message.BackMessageOKType{
-					writeFunc(nil,true)
+					f(nil,true,u.remoteHost, u.remotePort)
 				}else{
 					log.DebugF("发信息失败 u:{} DeleteUser",username)
 					server.userStore.DeleteUser(username)
-					writeFunc(err,false)
+					f(err,false,u.remoteHost, u.remotePort)
 				}
 			}else{
 				log.DebugF("发信息失败 u:{} DeleteUser",username)
 				server.userStore.DeleteUser(username)
-				writeFunc(err,false)
+				f(err,false,u.remoteHost, u.remotePort)
 			}
 		})
 	}else{
-		writeFunc(nil,false)
+		f(nil,false,"",0)
 	}
 }
 
 
-func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)bool  {
+func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc,exHost string,exPort int)bool  {
 	var i int32 = 0
 	var flag = false
 	var hasMachine = false
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
+		if remoteHost==exHost &&remotePort==exPort{
+			return
+		}
 		hasMachine = true
 		atomic.AddInt32(&i, 1)
-		log.DebugF("向{}:{} 发送集群信息 msgId:{}",remoteHost,remotePort,iMessage.InputMessage.GetMessageId())
+		log.InfoF("向{}:{} 发送集群信息 msgId:{}",remoteHost,remotePort,iMessage.InputMessage.GetMessageId())
 		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(replayMessage message.IMessage, hasReplay bool, err error) {
 			atomic.AddInt32(&i, -1)
 			if hasReplay{

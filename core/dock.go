@@ -49,7 +49,7 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 	log.DebugF("信息发送本机  IsForward:{}  flag:{} msgId:{}", msg.IsForward,flag,msg.InputMessage.GetMessageId())
 	if msg.IsForward && !flag {
 		if dock.handleSendMessage != nil {
-			dock.handleSendMessage(msg, func(err error, hasUser bool) {
+			 dock.handleSendMessage(msg, func(err error, hasUser bool) {
 				log.DebugF("信息发送本机 有反馈 hasUser:{} msgId:{}", hasUser,msg.InputMessage.GetMessageId())
 				msg.flag = hasUser
 				msg.err = err

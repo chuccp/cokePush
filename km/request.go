@@ -5,18 +5,20 @@ import (
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
-	"github.com/chuccp/cokePush/util"
 	net2 "net"
 	"strconv"
 	"sync"
 	"time"
 )
 
+type STATUS int
+
 const (
-	NEW = iota
+	NEW STATUS = iota
 	CREATING
 	CONNING
 	BREAK
+	ERROR
 )
 
 var poolChan = &sync.Pool{
@@ -85,7 +87,7 @@ func (q *messageQ) close() {
 }
 
 type Conn struct {
-	status     int
+	status     STATUS
 	host       string
 	port       int
 	stream     *Stream
@@ -136,10 +138,10 @@ func (conn *Conn) asyncWrite(iMessage message.IMessage, callBackFunc CallBackFun
 }
 
 // JustWrite /** 只写不管有无处理
-func (conn *Conn) justWrite(iMessage message.IMessage){
-	 conn.stream.WriteMessage(iMessage)
+func (conn *Conn) justWrite(iMessage message.IMessage) {
+	conn.stream.WriteMessage(iMessage)
 }
-func (conn *Conn) getStatus() int {
+func (conn *Conn) getStatus() STATUS {
 	return conn.status
 }
 func (conn *Conn) Close() {
@@ -148,7 +150,6 @@ func (conn *Conn) Close() {
 func (conn *Conn) clear() {
 	conn.msgChanMap.Range(func(key, value interface{}) bool {
 
-
 		switch mq := value.(type) {
 		case *messageQ:
 			{
@@ -156,8 +157,8 @@ func (conn *Conn) clear() {
 			}
 		case *messageB:
 			{
-				if mq.callBackFunc!=nil{
-					mq.callBackFunc(nil,false,net2.ErrClosed)
+				if mq.callBackFunc != nil {
+					mq.callBackFunc(nil, false, net2.ErrClosed)
 				}
 				conn.msgChanMap.Delete(mq.writeMsg.GetMessageId())
 			}
@@ -275,95 +276,98 @@ func newConn(host string, port int) *Conn {
 
 type Request struct {
 	connMap *sync.Map
-	rLock   *util.MapLock
+	rLock   *sync.RWMutex
 }
 
 func NewRequest() *Request {
-	return &Request{connMap: new(sync.Map), rLock: util.NewMapLock()}
+	return &Request{connMap: new(sync.Map), rLock: new(sync.RWMutex)}
 }
-func (request *Request) getConn(host string, port int) (*Conn, error) {
+
+func (request *Request) async(host string, port int, f func(*Conn, STATUS, error)) {
 	key := strconv.Itoa(port) + host
 	val, ok := request.connMap.Load(key)
 	if ok {
 		conn := val.(*Conn)
-		return request.connStatus(conn, key, host, port)
-	} else {
-		request.rLock.Lock(key)
-		val, ok := request.connMap.Load(key)
-		if ok {
-			request.rLock.UnLock(key)
-			conn := val.(*Conn)
-			return request.connStatus(conn, key, host, port)
+		request.rLock.Lock()
+		if conn.status == NEW || conn.status == BREAK {
+			conn.status = CREATING
+			request.rLock.Unlock()
+			connStart(conn, f)
 		} else {
-			nn, err := request.newConn(key, host, port)
-			request.rLock.UnLock(key)
-			return nn, err
+			request.rLock.Unlock()
+			f(conn, conn.status, nil)
 		}
-	}
-	return nil, nil
-}
-
-func (request *Request) connStatus(conn *Conn, key string, host string, port int) (*Conn, error) {
-	if conn.getStatus() == CONNING {
-		return conn, nil
-	}
-	if conn.getStatus() == CREATING {
-		return nil, core.ConnOnCreating
-	}
-	if conn.getStatus() == NEW || conn.getStatus() == BREAK {
-		request.rLock.Lock(key)
-		if conn.getStatus() == CONNING {
-			request.rLock.UnLock(key)
-			return conn, nil
-		}
-		if conn.getStatus() == CREATING {
-			request.rLock.UnLock(key)
-			return nil, core.ConnOnCreating
-		}
-		if conn.getStatus() == NEW || conn.getStatus() == BREAK {
-			cnn, err := request.newConn(key, host, port)
-			request.rLock.UnLock(key)
-			return cnn, err
-		}
-		request.rLock.UnLock(key)
-	}
-	request.rLock.UnLock(key)
-	return nil, core.UnKnownConn
-}
-
-func (request *Request) newConn(key string, host string, port int) (*Conn, error) {
-	cn := newConn(host, port)
-	request.connMap.Store(key, cn)
-	err := cn.start()
-	if err != nil {
-		return nil, err
-	}
-	return cn, nil
-}
-
-func (request *Request) Call(host string, port int, message message.IMessage) (message.IMessage, *Conn, error) {
-
-	rq, err := request.getConn(host, port)
-	if err != nil {
-		return nil, rq, err
 	} else {
-		msg, err := rq.write(message)
-		return msg, rq, err
+		request.rLock.Lock()
+		val, ok = request.connMap.Load(key)
+		if ok {
+			conn := val.(*Conn)
+			if conn.status == NEW || conn.status == BREAK {
+				conn.status = CREATING
+				request.rLock.Unlock()
+				connStart(conn, f)
+			} else {
+				request.rLock.Unlock()
+				f(conn, conn.status, nil)
+			}
+		} else {
+			cn := newConn(host, port)
+			request.connMap.Store(key, cn)
+			cn.status = CREATING
+			request.rLock.Unlock()
+			connStart(cn, f)
+		}
 	}
+}
+
+func connStart(cn *Conn, f func(*Conn, STATUS, error)) {
+	go func() {
+		err := cn.start()
+		if err == nil {
+			f(cn, cn.status, nil)
+		} else {
+			f(cn, ERROR, err)
+		}
+	}()
+}
+func (request *Request) Call(host string, port int, msg message.IMessage) (iMsg message.IMessage, cnn *Conn, err error) {
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	request.async(host, port, func(conn *Conn, status STATUS, err1 error) {
+		cnn = conn
+		if status == CONNING {
+			conn.asyncWrite(msg, func(iMessage message.IMessage, b bool, err2 error) {
+				iMsg = iMessage
+				err = err2
+				if !b {
+					err = core.ReadTimeout
+				}
+				wg.Done()
+			})
+		} else {
+			err = err1
+		}
+	})
+	wg.Wait()
+	return
 }
 func (request *Request) Async(host string, port int, iMessage message.IMessage, callBackFunc CallBackFunc) {
-	rq, err := request.getConn(host, port)
-	if err != nil {
-		callBackFunc(nil, false, err)
-	} else {
-		rq.asyncWrite(iMessage,callBackFunc)
-	}
+	request.async(host, port, func(conn *Conn, status STATUS, err error) {
+		if status == CONNING {
+			conn.asyncWrite(iMessage, func(iMessage message.IMessage, b bool, err error) {
+				conn.asyncWrite(iMessage, callBackFunc)
+			})
+		} else if status==CREATING{
+			callBackFunc(nil, false,core.ConnOnCreating)
+		}else{
+			callBackFunc(nil, false,err)
+		}
+	})
 }
-func (request *Request) JustCall(host string, port int, message message.IMessage)  {
-	rq, err := request.getConn(host, port)
-	if err != nil {
-		return
-	} else {
-		rq.justWrite(message)
-	}
+func (request *Request) JustCall(host string, port int, message message.IMessage) {
+	request.async(host, port, func(conn *Conn, status STATUS, err error) {
+		if status == CONNING {
+			conn.justWrite(message)
+		}
+	})
 }
