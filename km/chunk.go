@@ -134,7 +134,7 @@ func lengthToBytes(length uint32) []byte {
 		b[3] = byte(length)
 		b[2] = byte(length >> 4)
 		b[1] = byte(length >> 8)
-		b[0] = byte(length>>12) | 64
+		b[0] = byte(length>>12) | 128
 		return b
 	}
 }
@@ -474,15 +474,15 @@ func (stream *chunkReadStream) readMessageLength() (uint32, error) {
 	var num uint32
 	data, err := stream.read_.ReadUintBytes(2)
 	if err == nil {
-		pre := data[0] & 64
+		pre := data[0] & 128
 		if pre == 0 {
-			num = num | uint32(data[0])
+			num = uint32(data[0])
 			num = (num << 8) | uint32(data[1])
 			return num, err
 		} else {
 			data2, err := stream.read_.ReadUintBytes(2)
 			if err == nil {
-				num = (num | 64) | uint32(data[0])
+				num =  uint32(data[0])&127
 				num = (num << 8) | uint32(data[1])
 				num = (num << 8) | uint32(data2[0])
 				num = (num << 8) | uint32(data2[1])
