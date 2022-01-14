@@ -95,3 +95,17 @@ func TestChan(t *testing.T)  {
 	fmt.Printf("实际参数的地址 %p\n", &h)
 	time.Sleep(time.Second*10)
 }
+func TestLength(t *testing.T) {
+
+	data:=lengthToBytes(32_768)
+	for _,k:=range data{
+		t.Logf("%b\n",k)
+	}
+
+	num :=  uint32(data[0])&127
+	num = (num << 8) | uint32(data[1])
+	num = (num << 8) | uint32(data[2])
+	num = (num << 8) | uint32(data[3])
+
+	log.Info(num)
+}

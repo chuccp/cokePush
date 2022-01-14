@@ -123,21 +123,7 @@ func (chunk0 chunk0) toByte() []byte {
 	return bytesArray
 }
 
-func lengthToBytes(length uint32) []byte {
-	if length <= 32_767 {
-		b := []byte{0, 0}
-		b[1] = byte(length)
-		b[0] = byte(length >> 8)
-		return b
-	} else {
-		b := []byte{0, 0, 0, 0}
-		b[3] = byte(length)
-		b[2] = byte(length >> 4)
-		b[1] = byte(length >> 8)
-		b[0] = byte(length>>12) | 128
-		return b
-	}
-}
+
 
 type chunk1 struct {
 	*chunk
@@ -492,4 +478,19 @@ func (stream *chunkReadStream) readMessageLength() (uint32, error) {
 	}
 
 	return num, err
+}
+func lengthToBytes(length uint32) []byte {
+	if length <= 32_767 {
+		b := []byte{0, 0}
+		b[1] = byte(length)
+		b[0] = byte(length >> 8)
+		return b
+	} else {
+		b := []byte{0, 0, 0, 0}
+		b[3] = byte(length)
+		b[2] = byte(length >> 8)
+		b[1] = byte(length >> 16)
+		b[0] = byte(length>>24) | 128
+		return b
+	}
 }
