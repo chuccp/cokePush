@@ -175,6 +175,7 @@ func (conn *Conn) start() error {
 		return err
 	} else {
 		conn.stream, err = NewClientStream(sm)
+		log.InfoF("连接上状态 {}  {}",conn.status,err)
 		if err == nil {
 			conn.status = CONNING
 			go conn.closeTimeOutMessage()
@@ -287,7 +288,9 @@ func (request *Request) async(host string, port int, f func(*Conn, STATUS, error
 	key := strconv.Itoa(port) + host
 	val, ok := request.connMap.Load(key)
 	if ok {
+
 		conn := val.(*Conn)
+		log.InfoF("连接上状态 {}",conn.status)
 		request.rLock.Lock()
 		if conn.status == NEW || conn.status == BREAK {
 			conn.status = CREATING

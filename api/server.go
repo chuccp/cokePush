@@ -1,6 +1,7 @@
 package api
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/util"
@@ -28,6 +29,7 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	msg := util.GetMessage(re)
 	flag := util.GetChanBool()
 	var once sync.Once
+	log.InfoF("发送消息：{}",username)
 	server.context.SendMessage(message.CreateBasicMessage("system", username, msg), func(err error, u bool) {
 		if u {
 			w.Write([]byte("success"))

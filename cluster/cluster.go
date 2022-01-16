@@ -132,8 +132,8 @@ func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f fu
 					server.userStore.DeleteUser(username)
 					f(err,false,u.remoteHost, u.remotePort)
 				}
-			}else{
 				log.DebugF("发信息失败 u:{} DeleteUser",username)
+			}else{
 				server.userStore.DeleteUser(username)
 				f(err,false,u.remoteHost, u.remotePort)
 			}

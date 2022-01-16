@@ -18,3 +18,5 @@ var  ReadTimeout = errors.New("read timeout")
 var  ConnOnCreating = errors.New("conn  on creating ")
 
 var UnKnownConn = errors.New("UNKNOWN Conn")
+
+var UnKnownVersion = errors.New("UNKNOWN Version")

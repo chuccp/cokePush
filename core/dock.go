@@ -30,6 +30,7 @@ func newDock() *dock {
 func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true
+	log.InfoF("写消息")
 	dock.sendMsg.Offer(msg)
 }
 func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
@@ -46,11 +47,10 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 		ee = err
 		return err != nil
 	})
-	log.DebugF("信息发送本机  IsForward:{}  flag:{} msgId:{}", msg.IsForward,flag,msg.InputMessage.GetMessageId())
 	if msg.IsForward && !flag {
 		if dock.handleSendMessage != nil {
 			 dock.handleSendMessage(msg, func(err error, hasUser bool) {
-				log.DebugF("信息发送本机 有反馈 hasUser:{} msgId:{}", hasUser,msg.InputMessage.GetMessageId())
+				log.InfoF("信息发送本机 有反馈 hasUser:{} msgId:{}", hasUser,msg.InputMessage.GetMessageId())
 				msg.flag = hasUser
 				msg.err = err
 				dock.replyMessage(msg)
@@ -114,6 +114,7 @@ func (dock *dock) exchangeSendMsg() {
 
 	for {
 		msg,_ := dock.sendMsg.Poll()
+		log.InfoF("读消息")
 		if msg != nil {
 			dm:=msg.(*DockMessage)
 			fa, err := dock.writeUserMsg(dm)
