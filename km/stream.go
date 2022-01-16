@@ -56,6 +56,7 @@ func (stream *Stream) shakeHandsClient() (err error) {
 					stream.km = NewKm00001(stream.io)
 					return nil
 				}else{
+					stream.close(0)
 					return core.UnKnownVersion
 				}
 			}else{
