@@ -22,6 +22,7 @@ type Queue struct {
 	waitNum int32
 	num   int32
 	lock  *sync.Mutex
+	rLock  *sync.Mutex
 	timer *timer
 }
 
@@ -72,7 +73,7 @@ func freeTimer(timer *timer) {
 }
 
 func NewQueue() *Queue {
-	return &Queue{ch: make(chan bool), waitNum: 0, num: 0, lock: new(sync.Mutex)}
+	return &Queue{ch: make(chan bool), waitNum: 0, num: 0, lock: new(sync.Mutex),rLock:new(sync.Mutex)}
 }
 func (queue *Queue) Offer(value interface{}) (num int32) {
 	ele := newElement(value)
@@ -103,10 +104,19 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 		if queue.num > 0 {
 			if queue.num == 1 {
 				value,num = queue.readOne()
+				queue.lock.Unlock()
+				return
 			} else {
-				value,num = queue.readGtOne()
+				queue.lock.Unlock()
+				queue.rLock.Lock()
+				val,n,blank := queue.readGtOne()
+				if !blank{
+					queue.rLock.Unlock()
+					return val,n
+				}else{
+					queue.rLock.Unlock()
+				}
 			}
-			queue.lock.Unlock()
 			return
 		} else {
 			queue.waitNum++
@@ -118,17 +128,20 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 
 func (queue *Queue)readOne()(value interface{}, num int32){
 	var ele = queue.output
-	num = atomic.AddInt32(&queue.num, -1)
 	value = ele.value
-	return
+	num = atomic.AddInt32(&queue.num, -1)
+	return value,num
 }
-func (queue *Queue) readGtOne()(value interface{}, num int32){
+func (queue *Queue) readGtOne()(value interface{}, num int32,isBlank bool){
 	var ele = queue.output
+	if ele.next==nil{
+		return nil,0,true
+	}
 	value = ele.value
 	queue.output = ele.next
 	ele.next = nil
 	num = atomic.AddInt32(&queue.num, -1)
-	return
+	return value,num,false
 }
 
 func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) {
@@ -137,11 +150,19 @@ func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) 
 		if queue.num > 0 {
 			if queue.num == 1 {
 				value,num = queue.readOne()
+				queue.lock.Unlock()
+				return
 			} else {
-				value,num = queue.readGtOne()
+				queue.lock.Unlock()
+				queue.rLock.Lock()
+				val,n,blank:= queue.readGtOne()
+				if !blank{
+					queue.rLock.Unlock()
+					return val,n
+				}else{
+					queue.rLock.Unlock()
+				}
 			}
-			queue.lock.Unlock()
-			return
 		} else {
 			queue.waitNum++
 			queue.lock.Unlock()
