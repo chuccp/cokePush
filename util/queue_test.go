@@ -18,8 +18,8 @@ func Test_queue(t *testing.T)  {
 			j := i
 			for  {
 
-				v,_:=q.Poll()
-				time.Sleep(time.Second*1)
+				v,_:=q.Take(time.Second)
+				time.Sleep(time.Second)
 				log.Info(j,"=====",v)
 			}
 

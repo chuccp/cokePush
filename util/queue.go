@@ -103,13 +103,11 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 		if queue.num > 0 {
 			if queue.num == 1 {
 				value,num = queue.readOne()
-				queue.lock.Unlock()
-				return value, num
 			} else {
 				value,num = queue.readGtOne()
-				queue.lock.Unlock()
-				return
 			}
+			queue.lock.Unlock()
+			return
 		} else {
 			queue.waitNum++
 			queue.lock.Unlock()
@@ -139,13 +137,11 @@ func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) 
 		if queue.num > 0 {
 			if queue.num == 1 {
 				value,num = queue.readOne()
-				queue.lock.Unlock()
-				return
 			} else {
 				value,num = queue.readGtOne()
-				queue.lock.Unlock()
-				return
 			}
+			queue.lock.Unlock()
+			return
 		} else {
 			queue.waitNum++
 			queue.lock.Unlock()
