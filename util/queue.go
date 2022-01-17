@@ -109,8 +109,8 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 			} else {
 				queue.lock.Unlock()
 				queue.rLock.Lock()
-				val,n,blank := queue.readGtOne()
-				if !blank{
+				val,n,one := queue.readGtOne()
+				if !one{
 					queue.rLock.Unlock()
 					return val,n
 				}else{
@@ -132,7 +132,7 @@ func (queue *Queue)readOne()(value interface{}, num int32){
 	num = atomic.AddInt32(&queue.num, -1)
 	return value,num
 }
-func (queue *Queue) readGtOne()(value interface{}, num int32,isBlank bool){
+func (queue *Queue) readGtOne()(value interface{}, num int32,isOne bool){
 	var ele = queue.output
 	if ele.next==nil{
 		return nil,0,true
@@ -155,8 +155,8 @@ func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) 
 			} else {
 				queue.lock.Unlock()
 				queue.rLock.Lock()
-				val,n,blank:= queue.readGtOne()
-				if !blank{
+				val,n,one:= queue.readGtOne()
+				if !one{
 					queue.rLock.Unlock()
 					return val,n
 				}else{
