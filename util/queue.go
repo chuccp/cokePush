@@ -88,6 +88,7 @@ func (queue *Queue) Offer(value interface{}) (num int32) {
 	num = atomic.AddInt32(&queue.num, 1)
 	if queue.waitNum>0 {
 		queue.waitNum--
+		//log.InfoF("Offer queue.waitNum {}",queue.waitNum)
 		queue.lock.Unlock()
 		queue.ch <- true
 	} else {
@@ -120,6 +121,7 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 				return
 			}
 		} else {
+			//log.InfoF("Poll queue.waitNum {}",queue.waitNum)
 			queue.waitNum++
 			queue.lock.Unlock()
 			<-queue.ch
