@@ -105,8 +105,7 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 		if queue.num > 0 {
 			if queue.num == 1 {
 				var ele = queue.output
-				queue.num--
-				num = queue.num
+				num = atomic.AddInt32(&queue.num, -1)
 				queue.lock.Unlock()
 				return ele.value, num
 			} else {

@@ -18,7 +18,7 @@ func Test_queue(t *testing.T)  {
 			j := i
 			for  {
 
-				v,_:=q.Poll()
+				v,_:=q.Take(time.Second*15)
 				time.Sleep(time.Second*1)
 				log.Info(j,"=====",v)
 			}
@@ -28,6 +28,81 @@ func Test_queue(t *testing.T)  {
 	}
 
 	time.Sleep(time.Second*10)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	time.Sleep(time.Second*30)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+
+	q.Offer(1)
+	q.Offer(2)
+	q.Offer(3)
+	q.Offer(4)
+	q.Offer(5)
+	time.Sleep(time.Second*30)
 
 	q.Offer(1)
 	q.Offer(2)
