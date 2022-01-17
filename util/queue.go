@@ -121,7 +121,6 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 func (queue *Queue)readOne()(value interface{}, num int32){
 	var ele = queue.output
 	num = atomic.AddInt32(&queue.num, -1)
-	queue.lock.Unlock()
 	value = ele.value
 	return
 }
