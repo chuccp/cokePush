@@ -19,7 +19,6 @@ func Test_queue(t *testing.T)  {
 			for  {
 
 				v,_:=q.Take(time.Second)
-				time.Sleep(time.Second)
 				log.Info(j,"=====",v)
 			}
 
