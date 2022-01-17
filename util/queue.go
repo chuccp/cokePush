@@ -117,7 +117,6 @@ func (queue *Queue) Poll() (value interface{}, num int32) {
 					queue.rLock.Unlock()
 				}
 			}
-			return
 		} else {
 			queue.waitNum++
 			queue.lock.Unlock()
