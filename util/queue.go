@@ -160,6 +160,8 @@ func (queue *Queue) Take(duration time.Duration) (value interface{}, num int32) 
 						queue.waitNum--
 						queue.lock.Unlock()
 						queue.ch <- false
+					}else{
+						queue.lock.Unlock()
 					}
 				}
 			}()
