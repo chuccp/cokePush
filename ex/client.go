@@ -4,6 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
+	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
 	"net"
 	"net/http"
@@ -88,6 +89,10 @@ type client struct {
 	rLock *sync.RWMutex
 }
 
+func (client client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc)  {
+	err:=client.WriteMessage(iMessage)
+	writeFunc(err,err==nil)
+}
 
 func NewClient(context *core.Context, username string,remoteAddress string) *client {
 	c := &client{queue: util.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex),remoteAddress:remoteAddress}

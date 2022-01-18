@@ -18,6 +18,11 @@ type client struct {
 	username string
 }
 
+func (client *client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc)  {
+	err:=client.WriteMessage(iMessage)
+	writeFunc(err,err==nil)
+}
+
 func (client *client) GetRemoteAddress() string {
 	return client.stream.RemoteAddr().String()
 }

@@ -103,7 +103,7 @@ func (server *Server)addUser(username string,machineId string){
 func (server *Server)delete(username string,machineId string)  {
 	server.userStore.DeleteUser(username)
 }
-func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)  {
+func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc user.WriteFunc)  {
 	server.sendStoreMachineDockMessage(iMessage, func(err error, hasUser bool,host string,port int) {
 		if hasUser{
 			writeFunc(err,hasUser)
@@ -142,7 +142,7 @@ func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f fu
 }
 
 
-func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc,exHost string,exPort int)bool  {
+func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writeFunc user.WriteFunc,exHost string,exPort int)bool  {
 	var i int32 = 0
 	var flag = false
 	var hasMachine = false

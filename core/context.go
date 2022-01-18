@@ -59,10 +59,10 @@ func (context *Context) UserNum() int32{
 func (context *Context) DeleteUser(iUser user.IUser) {
 	context.dock.DeleteUser(iUser)
 }
-func (context *Context) SendMessage(msg message.IMessage, write WriteFunc) {
+func (context *Context) SendMessage(msg message.IMessage, write user.WriteFunc) {
 	context.dock.sendMessage(msg, write)
 }
-func (context *Context) SendMessageNoForward(msg message.IMessage, write WriteFunc) {
+func (context *Context) SendMessageNoForward(msg message.IMessage, write user.WriteFunc) {
 	context.dock.SendMessageNoForward(msg, write)
 }
 

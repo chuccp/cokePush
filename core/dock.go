@@ -7,11 +7,9 @@ import (
 	"github.com/chuccp/cokePush/util"
 )
 
-type WriteFunc func(err error, hasUser bool)
-
 type HandleAddUser func(iUser user.IUser)
 type HandleDeleteUser func(username string)
-type HandleSendMessage func(iMessage *DockMessage, writeFunc WriteFunc)
+type HandleSendMessage func(iMessage *DockMessage, writeFunc user.WriteFunc)
 
 type dock struct {
 	sendMsg           *util.Queue
@@ -25,22 +23,22 @@ type dock struct {
 }
 
 func newDock() *dock {
-	return &dock{sendMsg:util.NewQueue(), UserStore: user.NewStore(), replyMsg: util.NewQueue()}
+	return &dock{sendMsg: util.NewQueue(), UserStore: user.NewStore(), replyMsg: util.NewQueue()}
 }
-func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
+func (dock *dock) sendMessage(iMessage message.IMessage, write user.WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true
 	dock.sendMsg.Offer(msg)
 }
-func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
+func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write user.WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = false
 	dock.sendMsg.Offer(msg)
 }
 
-func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
-	userId := msg.InputMessage.GetString(message.ToUser)
-	log.DebugF("信息发送:{}", userId)
+func (dock *dock) writeUserMsg(msg *DockMessage) {
+	var flag bool
+	var ee error
 	flag = dock.UserStore.GetUser(msg.InputMessage.GetString(message.ToUser), func(iUser user.IUser) bool {
 		err := iUser.WriteMessage(msg.InputMessage)
 		ee = err
@@ -48,58 +46,62 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 	})
 	if msg.IsForward && !flag {
 		if dock.handleSendMessage != nil {
-			 dock.handleSendMessage(msg, func(err error, hasUser bool) {
+			dock.handleSendMessage(msg, func(err error, hasUser bool) {
 				msg.flag = hasUser
 				msg.err = err
 				dock.replyMessage(msg)
 			})
-		}else{
+		} else {
 			msg.flag = false
 			msg.err = NoFoundUser
 			dock.replyMessage(msg)
 		}
+	} else {
+		msg.flag = flag
+		msg.err = ee
+		dock.replyMessage(msg)
 	}
 	return
 }
 func (dock *dock) AddUser(iUser user.IUser) {
-	fa:=dock.UserStore.AddUser(iUser)
-	if fa{
-		if dock.handleAddUser!=nil{
+	fa := dock.UserStore.AddUser(iUser)
+	if fa {
+		if dock.handleAddUser != nil {
 			dock.handleAddUser(iUser)
 		}
 	}
 }
 func (dock *dock) DeleteUser(iUser user.IUser) {
-	fa:=dock.UserStore.DeleteUser(iUser)
-	if fa{
-		if dock.handleDeleteUser!=nil{
+	fa := dock.UserStore.DeleteUser(iUser)
+	if fa {
+		if dock.handleDeleteUser != nil {
 			dock.handleDeleteUser(iUser.GetUsername())
 		}
 	}
 }
-func (dock *dock) UserNum()int32 {
+func (dock *dock) UserNum() int32 {
 	return dock.UserStore.GetUserNum()
 }
 
 func (dock *dock) replyMessage(msg *DockMessage) {
-	log.DebugF("加入消息反馈队列:{}",msg.InputMessage.GetMessageId())
+	log.DebugF("加入消息反馈队列:{}", msg.InputMessage.GetMessageId())
 	dock.replyMsg.Offer(msg)
 }
 func (dock *dock) exchangeReplyMsg() {
 	log.DebugF("启动信息反馈处理")
 	for {
-		msg,_ := dock.replyMsg.Poll()
-		dockMessage:=msg.(*DockMessage)
+		msg, _ := dock.replyMsg.Poll()
+		dockMessage := msg.(*DockMessage)
 		if msg != nil {
 			dockMessage.write(dockMessage.err, dockMessage.flag)
 		}
 	}
 }
-func (dock *dock) sendNum()int32{
+func (dock *dock) sendNum() int32 {
 
 	return dock.sendMsg.Num()
 }
-func (dock *dock) replyNum()int32{
+func (dock *dock) replyNum() int32 {
 
 	return dock.replyMsg.Num()
 }
@@ -107,15 +109,11 @@ func (dock *dock) exchangeSendMsg() {
 	log.DebugF("启动信息发送处理")
 
 	for {
-		msg,_ := dock.sendMsg.Poll()
+		msg, _ := dock.sendMsg.Poll()
 		if msg != nil {
-			dm:=msg.(*DockMessage)
-			fa, err := dock.writeUserMsg(dm)
-			if !dm.IsForward || fa{
-				dm.flag = fa
-				dm.err = err
-				dock.replyMessage(dm)
-			}
+			dm := msg.(*DockMessage)
+			dock.writeUserMsg(dm)
+
 		}
 	}
 }
