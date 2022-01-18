@@ -61,7 +61,6 @@ func (dock *dock) writeUserMsg(msg *DockMessage) {
 		msg.err = ee
 		dock.replyMessage(msg)
 	}
-	return
 }
 func (dock *dock) AddUser(iUser user.IUser) {
 	fa := dock.UserStore.AddUser(iUser)
@@ -113,7 +112,6 @@ func (dock *dock) exchangeSendMsg() {
 		if msg != nil {
 			dm := msg.(*DockMessage)
 			dock.writeUserMsg(dm)
-
 		}
 	}
 }
