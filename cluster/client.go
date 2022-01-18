@@ -147,9 +147,7 @@ func (client *Client) handleMessage(msg message.IMessage) {
 	case message.OrdinaryMessageClass:
 		messageType := msg.GetMessageType()
 		if messageType==message.BasicMessageType{
-			log.DebugF("收到普通文本信息 msgId:{}",msg.GetMessageId())
 			client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
-
 				nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
 				err2:=client.stream.WriteMessage(nMsg)
 				log.DebugF("收到普通文本信息 msgId:{} 处理信息1:{}   {}",msg.GetMessageId(),err,err2)

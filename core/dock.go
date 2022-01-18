@@ -30,7 +30,6 @@ func newDock() *dock {
 func (dock *dock) sendMessage(iMessage message.IMessage, write WriteFunc) {
 	msg := newDockMessage(iMessage, write)
 	msg.IsForward = true
-	log.InfoF("写消息")
 	dock.sendMsg.Offer(msg)
 }
 func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write WriteFunc) {
@@ -50,7 +49,6 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 	if msg.IsForward && !flag {
 		if dock.handleSendMessage != nil {
 			 dock.handleSendMessage(msg, func(err error, hasUser bool) {
-				log.InfoF("信息发送本机 有反馈 hasUser:{} msgId:{}", hasUser,msg.InputMessage.GetMessageId())
 				msg.flag = hasUser
 				msg.err = err
 				dock.replyMessage(msg)
@@ -65,7 +63,6 @@ func (dock *dock) writeUserMsg(msg *DockMessage) (flag bool, ee error) {
 }
 func (dock *dock) AddUser(iUser user.IUser) {
 	fa:=dock.UserStore.AddUser(iUser)
-	log.InfoF("添加用户：{}  flag:{}",iUser.GetUsername(),fa)
 	if fa{
 		if dock.handleAddUser!=nil{
 			dock.handleAddUser(iUser)
@@ -74,7 +71,6 @@ func (dock *dock) AddUser(iUser user.IUser) {
 }
 func (dock *dock) DeleteUser(iUser user.IUser) {
 	fa:=dock.UserStore.DeleteUser(iUser)
-	log.InfoF("删除用户：{}  flag:{}",iUser.GetUsername(),fa)
 	if fa{
 		if dock.handleDeleteUser!=nil{
 			dock.handleDeleteUser(iUser.GetUsername())
@@ -94,11 +90,9 @@ func (dock *dock) exchangeReplyMsg() {
 	for {
 		msg,_ := dock.replyMsg.Poll()
 		dockMessage:=msg.(*DockMessage)
-		log.DebugF("处理反馈信息：{}",dockMessage.InputMessage.GetMessageId())
 		if msg != nil {
 			dockMessage.write(dockMessage.err, dockMessage.flag)
 		}
-		log.DebugF("处理反馈信息：{} 完成",dockMessage.InputMessage.GetMessageId())
 	}
 }
 func (dock *dock) sendNum()int32{
@@ -114,12 +108,10 @@ func (dock *dock) exchangeSendMsg() {
 
 	for {
 		msg,_ := dock.sendMsg.Poll()
-		log.InfoF("读消息")
 		if msg != nil {
 			dm:=msg.(*DockMessage)
 			fa, err := dock.writeUserMsg(dm)
 			if !dm.IsForward || fa{
-				log.DebugF("fa:{} err:{}", fa, err)
 				dm.flag = fa
 				dm.err = err
 				dock.replyMessage(dm)

@@ -239,9 +239,7 @@ func (server *Server) queryMachine() {
 }
 func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.Conn, error) {
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
-	log.InfoF("queryMachineInfo发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(host, port, qBasic)
-	log.InfoF("queryMachineInfo 收到信息 :{}", server.machineId)
 	if err == nil {
 		machine := msg.GetString(message.BackMachineAddress)
 		m, err := toMachine(machine)
@@ -258,9 +256,7 @@ func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.C
 func (server *Server) queryMachineBasic() error {
 
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
-	log.DebugF("queryMachineBasic发送信息 :{} msgId:{}", server.machineId, qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qBasic)
-	log.DebugF("queryMachineBasic 收到信息 :{}", server.machineId)
 	if err == nil {
 		if message.BackMessageClass == msg.GetClassId() {
 			if message.BackMessageOKType == msg.GetMessageType() {

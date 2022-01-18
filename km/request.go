@@ -175,7 +175,6 @@ func (conn *Conn) start() error {
 		return err
 	} else {
 		conn.stream, err = NewClientStream(sm)
-		log.InfoF("连接上状态 {}  {}",conn.status,err)
 		if err == nil {
 			conn.status = CONNING
 			go conn.closeTimeOutMessage()
@@ -355,11 +354,10 @@ func (request *Request) Call(host string, port int, msg message.IMessage) (iMsg 
 	return
 }
 func (request *Request) Async(host string, port int, iMessage message.IMessage, callBackFunc CallBackFunc) {
+
 	request.async(host, port, func(conn *Conn, status STATUS, err error) {
 		if status == CONNING {
-			conn.asyncWrite(iMessage, func(iMessage message.IMessage, b bool, err error) {
-				conn.asyncWrite(iMessage, callBackFunc)
-			})
+			conn.asyncWrite(iMessage,callBackFunc)
 		} else if status==CREATING{
 			callBackFunc(nil, false,core.ConnOnCreating)
 		}else{
