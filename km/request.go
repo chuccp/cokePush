@@ -347,6 +347,7 @@ func (request *Request) Call(host string, port int, msg message.IMessage) (iMsg 
 			})
 		} else {
 			err = err1
+			wg.Done()
 		}
 	})
 	wg.Wait()
