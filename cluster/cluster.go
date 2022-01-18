@@ -106,10 +106,8 @@ func (server *Server)delete(username string,machineId string)  {
 func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc core.WriteFunc)  {
 	server.sendStoreMachineDockMessage(iMessage, func(err error, hasUser bool,host string,port int) {
 		if hasUser{
-			log.InfoF("找到用户，直接发送:{}",iMessage.GetToUsername())
 			writeFunc(err,hasUser)
 		}else{
-			log.InfoF("没找到用户，全局发送:{}",iMessage.GetToUsername())
 			flag:=server.sendAllMachineDockMessage(iMessage,writeFunc,"",0)
 			if !flag{
 				writeFunc(nil,false)
@@ -154,7 +152,6 @@ func (server *Server) sendAllMachineDockMessage(iMessage *core.DockMessage, writ
 		}
 		hasMachine = true
 		atomic.AddInt32(&i, 1)
-		log.InfoF("向{}:{} 发送集群信息 msgId:{}",remoteHost,remotePort,iMessage.InputMessage.GetMessageId())
 		server.request.Async(remoteHost, remotePort, iMessage.InputMessage, func(replayMessage message.IMessage, hasReplay bool, err error) {
 			atomic.AddInt32(&i, -1)
 			if hasReplay{
@@ -201,7 +198,7 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 					mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
 					mis = append(mis,&mi)
 				}else{
-					log.InfoF("gob 转换错误：{}",err1)
+					log.InfoF("json 转换错误：{}",err1)
 				}
 			}
 		}
