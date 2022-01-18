@@ -20,6 +20,7 @@ func (server *Server) Start() error {
 		err=handle("/ex/sendMsg", server.sendMsg)
 		if err==nil{
 			go server.store.timeOutCheck()
+			go server.store.writeBlank()
 			log.InfoF("add ex route success")
 		}else{
 			log.ErrorF("add ex route fail err:{}",err)

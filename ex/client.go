@@ -1,6 +1,7 @@
 package ex
 
 import (
+	"container/list"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
@@ -18,7 +19,7 @@ import (
 type store struct {
 	clientMap *sync.Map
 	context   *core.Context
-	rLock *sync.RWMutex
+	rLock     *sync.RWMutex
 }
 
 func (store *store) jack(w http.ResponseWriter, re *http.Request) {
@@ -26,29 +27,29 @@ func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 	v, ok := store.clientMap.Load(userId)
 	if ok {
 		ct := v.(*client)
-		if !ct.poll(w){
-			store.createUser(userId, w,re)
+		if !ct.poll(w) {
+			store.createUser(userId, w, re)
 		}
 	} else {
-		store.createUser(userId, w,re)
+		store.createUser(userId, w, re)
 	}
 }
-func (store *store) createUser(userId string, w http.ResponseWriter,re *http.Request) {
-	client := NewClient(store.context, userId,re.RemoteAddr)
+func (store *store) createUser(userId string, w http.ResponseWriter, re *http.Request) {
+	client := NewClient(store.context, userId, re.RemoteAddr)
 	store.context.AddUser(client)
 	store.rLock.RLock()
 	store.clientMap.Store(userId, client)
 	store.rLock.RUnlock()
 	client.poll(w)
 }
-func (store *store) deleteUser(userId string,c *client,t *time.Time) {
-	flag:=c.close(t)
-	if flag{
+func (store *store) deleteUser(userId string, c *client, t *time.Time) {
+	flag := c.close(t)
+	if flag {
 		store.rLock.Lock()
-		v,ok:=store.clientMap.Load(userId)
-		if ok{
-			ci:=v.(*client)
-			if ci==c{
+		v, ok := store.clientMap.Load(userId)
+		if ok {
+			ci := v.(*client)
+			if ci == c {
 				store.clientMap.Delete(userId)
 			}
 		}
@@ -64,56 +65,90 @@ func (store *store) timeOutCheck() {
 		store.clientMap.Range(func(key, value interface{}) bool {
 			client := value.(*client)
 			if client.timeOut(&ti) {
-				store.deleteUser(key.(string),client,&ti)
+				store.deleteUser(key.(string), client, &ti)
 			}
 			return true
 		})
 	}
 }
+
+func (store *store) writeBlank() {
+	log.InfoF("轮询检查过期http长链接")
+	for {
+		time.Sleep(time.Second * 10)
+		t:=time.Now()
+		store.clientMap.Range(func(key, value interface{}) bool {
+			c, ok := value.(*client)
+			if ok {
+				c.writeBlank(&t)
+			}
+			return true
+		})
+	}
+}
+
 func (store *store) sendMsg(w http.ResponseWriter, re *http.Request) {
 
 }
 func newStore(context *core.Context) *store {
-	return &store{clientMap: new(sync.Map), context: context,rLock:new(sync.RWMutex)}
+	return &store{clientMap: new(sync.Map), context: context, rLock: new(sync.RWMutex)}
 }
 
 type client struct {
-	queue    *util.Queue
-	context  *core.Context
-	username string
-	userId   string
-	intPut   int32
-	hasClose bool
+	queue         *util.Queue
+	context       *core.Context
+	username      string
+	userId        string
+	intPut        int32
+	hasClose      bool
 	remoteAddress string
-	last     *time.Time
-	rLock *sync.RWMutex
+	last          *time.Time
+	rLock         *sync.RWMutex
+	lastTimeList  *list.List
 }
 
-func (client client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc)  {
-	err:=client.WriteMessage(iMessage)
-	writeFunc(err,err==nil)
+func (client client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc) {
+	err := client.WriteMessage(iMessage)
+	writeFunc(err, err == nil)
 }
 
-func NewClient(context *core.Context, username string,remoteAddress string) *client {
-	c := &client{queue: util.NewQueue(), context: context, username: username, intPut: 0,hasClose:false,rLock:new(sync.RWMutex),remoteAddress:remoteAddress}
+func NewClient(context *core.Context, username string, remoteAddress string) *client {
+	c := &client{queue: util.NewQueue(), context: context, username: username, intPut: 0, hasClose: false, rLock: new(sync.RWMutex), remoteAddress: remoteAddress}
 	c.userId = username + strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))), 36)
+	c.lastTimeList = list.New()
 	return c
 }
 func (client *client) GetRemoteAddress() string {
 	return client.remoteAddress
 }
 
+func (client *client) writeBlank(nowTime *time.Time) {
+	client.rLock.Lock()
+	for e := client.lastTimeList.Front(); e != nil; e = e.Next() {
+		t, ok := e.Value.(*time.Time)
+		if ok {
+			if t.Before(*nowTime) {
+				log.InfoF("过期写空")
+				client.queue.Offer(nil)
+			}else{
+				break
+			}
+		}
+	}
+	client.rLock.Unlock()
+}
+
 func (client *client) WriteMessage(iMessage message.IMessage) error {
-	if client.hasClose{
+	if client.hasClose {
 		return net.ErrClosed
 	}
 	log.DebugF("WriteMessage messageId {}", iMessage.GetMessageId())
 	client.queue.Offer(iMessage)
 	return nil
 }
-func (client *client)close(t *time.Time)bool{
+func (client *client) close(t *time.Time) bool {
 	client.rLock.Lock()
-	if client.timeOut(t){
+	if client.timeOut(t) {
 		client.hasClose = true
 		client.rLock.Unlock()
 		return true
@@ -122,31 +157,34 @@ func (client *client)close(t *time.Time)bool{
 	return false
 }
 
-func (client *client)isClose() bool {
+func (client *client) isClose() bool {
 	return client.hasClose
 }
 
 func (client *client) poll(w http.ResponseWriter) bool {
 	client.rLock.RLock()
-	if client.hasClose{
+	if client.hasClose {
 		client.rLock.RUnlock()
 		return false
 	}
-	atomic.AddInt32(&client.intPut,1)
+	atomic.AddInt32(&client.intPut, 1)
+	ti := time.Now().Add(time.Second * 20)
+	ele := client.lastTimeList.PushBack(&ti)
 	client.rLock.RUnlock()
-	msg,_ := client.queue.Take(time.Second * 20)
+	msg, _ := client.queue.Take(time.Second * 40)
 	if msg != nil {
-		m:=msg.(message.IMessage)
+		m := msg.(message.IMessage)
 		w.Write(m.GetValue(message.Text))
-	}else{
+	} else {
 		w.Write([]byte("[]"))
 	}
 	client.rLock.RLock()
-	atomic.AddInt32(&client.intPut,-1)
+	atomic.AddInt32(&client.intPut, -1)
 	if atomic.LoadInt32(&client.intPut) == 0 {
 		t := time.Now().Add(time.Second * 10)
 		client.last = &t
 	}
+	client.lastTimeList.Remove(ele)
 	client.rLock.RUnlock()
 	return true
 }
@@ -170,6 +208,6 @@ func (client *client) GetId() string {
 func (client *client) GetUsername() string {
 	return client.username
 }
-func (client *client)SetUsername(username string){
+func (client *client) SetUsername(username string) {
 	client.username = username
 }
