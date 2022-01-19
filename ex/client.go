@@ -18,9 +18,10 @@ type client struct {
 	queue    *queue.Queue
 	context  *core.Context
 	username string
-	rLock    *sync.RWMutex
-	userMap  *sync.Map
-	last     *time.Time
+	rLock   *sync.RWMutex
+	connMap *sync.Map
+	connNum int32
+	last    *time.Time
 	intPut   int32
 }
 type conn struct {
@@ -80,10 +81,11 @@ func (u *conn) canWrite() bool {
 func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) {
 	atomic.AddInt32(&c.intPut, 1)
 	cnn := newConn(username, w, re, c)
-	v, flag := c.userMap.LoadOrStore(cnn.userId, cnn)
+	v, flag := c.connMap.LoadOrStore(cnn.userId, cnn)
 	cnn = v.(*conn)
 	cnn.toWrite()
 	if !flag {
+		c.connNum++
 		c.context.AddUser(cnn)
 	}
 	ti := time.Now().Add(time.Second * 25)
@@ -112,18 +114,20 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 	cnn.last = &t
 }
 func (c *client) timeoutCheck(t *time.Time) {
-	c.userMap.Range(func(key, value interface{}) bool {
+	c.connMap.Range(func(key, value interface{}) bool {
 		cnn := value.(*conn)
 		if cnn.last != nil && cnn.last.Before(*t) {
+			log.InfoF("超时 {}   {}", cnn.username, cnn.userId)
 			c.context.DeleteUser(cnn)
-			c.userMap.Delete(cnn.userId)
+			c.connMap.Delete(cnn.userId)
+			c.connNum--
 		}
 		return true
 	})
 }
 
 func (c *client) writeBlank(t *time.Time) {
-	c.userMap.Range(func(key, value interface{}) bool {
+	c.connMap.Range(func(key, value interface{}) bool {
 		cnn := value.(*conn)
 		if cnn.add != nil && cnn.add.Before(*t) {
 			cnn.writeBlank()
@@ -132,7 +136,7 @@ func (c *client) writeBlank(t *time.Time) {
 	})
 }
 func newClient(context *core.Context, username string) *client {
-	c := &client{queue: queue.NewQueue(), context: context, username: username, rLock: new(sync.RWMutex), userMap: new(sync.Map)}
+	c := &client{queue: queue.NewQueue(), context: context, username: username, rLock: new(sync.RWMutex), connMap: new(sync.Map)}
 	return c
 }
 
@@ -157,6 +161,9 @@ func (store *store) timeoutCheck() {
 		store.clientMap.Range(func(key, value interface{}) bool {
 			cl := value.(*client)
 			cl.timeoutCheck(&ti)
+			if cl.connNum==0{
+				store.clientMap.Delete(key)
+			}
 			return true
 		})
 	}
