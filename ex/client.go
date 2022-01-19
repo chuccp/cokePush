@@ -88,7 +88,7 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 	}
 	ti := time.Now().Add(time.Second * 25)
 	cnn.add = &ti
-	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Second*40)
+	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Minute)
 	v, _, cls := c.queue.Dequeue(cnn.ctx)
 	if cnn.canWrite() {
 		if cls {
