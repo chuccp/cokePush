@@ -4,7 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
-	"github.com/chuccp/cokePush/util"
+	"github.com/chuccp/queue"
 )
 
 type HandleAddUser func(iUser user.IUser)
@@ -12,8 +12,8 @@ type HandleDeleteUser func(username string)
 type HandleSendMessage func(iMessage *DockMessage, writeFunc user.WriteFunc)
 
 type dock struct {
-	sendMsg           *util.Queue
-	replyMsg          *util.Queue
+	sendMsg           *queue.Queue
+	replyMsg          *queue.Queue
 	UserStore         *user.Store
 	handleAddUser     HandleAddUser
 	handleDeleteUser  HandleDeleteUser
@@ -23,7 +23,7 @@ type dock struct {
 }
 
 func newDock() *dock {
-	return &dock{sendMsg: util.NewQueue(), UserStore: user.NewStore(), replyMsg: util.NewQueue()}
+	return &dock{sendMsg: queue.NewQueue(), UserStore: user.NewStore(), replyMsg: queue.NewQueue()}
 }
 func (dock *dock) sendMessage(iMessage message.IMessage, write user.WriteFunc) {
 	msg := newDockMessage(iMessage, write)

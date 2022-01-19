@@ -1,20 +1,96 @@
 package ex
 
 import (
-	"container/list"
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
-	"net"
+	"github.com/chuccp/queue"
 	"net/http"
-	"strconv"
 	"sync"
-	"sync/atomic"
 	"time"
-	"unsafe"
 )
+
+type client struct {
+	queue    *queue.Queue
+	context  *core.Context
+	username string
+	rLock    *sync.RWMutex
+	userMap  *sync.Map
+}
+type conn struct {
+	userId   string
+	username string
+	address  string
+	w        http.ResponseWriter
+	re       *http.Request
+	client   *client
+	add      *time.Time
+	isWrite  bool
+}
+
+func newConn(username string, w http.ResponseWriter, re *http.Request, client *client) *conn {
+	c := &conn{w: w, re: re}
+	c.SetUsername(username)
+	c.address = re.RemoteAddr
+	c.userId = username + re.RemoteAddr
+	c.client = client
+	return c
+}
+func (u *conn) WriteMessage(iMessage message.IMessage) error {
+	u.client.queue.Offer(iMessage.GetString(message.Text))
+	return nil
+}
+func (u *conn) GetId() string {
+	return u.userId
+}
+func (u *conn) GetUsername() string {
+	return u.username
+}
+func (u *conn) GetRemoteAddress() string {
+	return u.address
+}
+func (u *conn) SetUsername(username string) {
+	u.username = username
+}
+func (u *conn) writeBlank() {
+	if !u.isWrite {
+		u.isWrite = true
+		u.w.Write([]byte("[]"))
+		u.client.queue.Offer(nil)
+	}
+}
+func (u *conn) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc) {
+
+}
+func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) bool {
+
+	cnn := newConn(username, w, re, c)
+	cnn.isWrite = false
+	_, flag := c.userMap.LoadOrStore(cnn.userId, cnn)
+	if !flag {
+		c.context.AddUser(cnn)
+	}
+	ti := time.Now()
+	cnn.add = &ti
+	v, _ := c.queue.Take(time.Second * 40)
+	if !cnn.isWrite {
+		cnn.isWrite = true
+		if v != nil {
+			m := v.(message.IMessage)
+			cnn.w.Write(m.GetValue(message.Text))
+		} else {
+			cnn.w.Write([]byte("[]"))
+		}
+	}
+	c.userMap.Delete(cnn.userId)
+	return false
+}
+
+func newClient(context *core.Context, username string) *client {
+	c := &client{queue: queue.NewQueue(), context: context, username: username, rLock: new(sync.RWMutex), userMap: new(sync.Map)}
+	return c
+}
 
 type store struct {
 	clientMap *sync.Map
@@ -23,68 +99,29 @@ type store struct {
 }
 
 func (store *store) jack(w http.ResponseWriter, re *http.Request) {
-	userId := util.GetUsername(re)
-	v, ok := store.clientMap.Load(userId)
+	username := util.GetUsername(re)
+	v, ok := store.clientMap.Load(username)
 	if ok {
 		ct := v.(*client)
-		if !ct.poll(w) {
-			store.createUser(userId, w, re)
+		if !ct.poll(username, w, re) {
+
 		}
 	} else {
-		store.createUser(userId, w, re)
+
 	}
 }
 func (store *store) createUser(userId string, w http.ResponseWriter, re *http.Request) {
-	client := NewClient(store.context, userId, re.RemoteAddr)
-	store.context.AddUser(client)
-	store.rLock.RLock()
-	store.clientMap.Store(userId, client)
-	store.rLock.RUnlock()
-	client.poll(w)
+
 }
 func (store *store) deleteUser(userId string, c *client, t *time.Time) {
-	flag := c.close(t)
-	if flag {
-		store.rLock.Lock()
-		v, ok := store.clientMap.Load(userId)
-		if ok {
-			ci := v.(*client)
-			if ci == c {
-				store.clientMap.Delete(userId)
-			}
-		}
-		store.rLock.Unlock()
-		store.context.DeleteUser(c)
-	}
+
 }
 func (store *store) timeOutCheck() {
-	for {
-		time.Sleep(time.Second * 5)
-		ti := time.Now()
-		log.TraceF("扫描过期连接 {}", ti)
-		store.clientMap.Range(func(key, value interface{}) bool {
-			client := value.(*client)
-			if client.timeOut(&ti) {
-				store.deleteUser(key.(string), client, &ti)
-			}
-			return true
-		})
-	}
+
 }
 
 func (store *store) writeBlank() {
-	log.InfoF("轮询检查过期http长链接")
-	for {
-		time.Sleep(time.Second * 10)
-		t:=time.Now()
-		store.clientMap.Range(func(key, value interface{}) bool {
-			c, ok := value.(*client)
-			if ok {
-				c.writeBlank(&t)
-			}
-			return true
-		})
-	}
+
 }
 
 func (store *store) sendMsg(w http.ResponseWriter, re *http.Request) {
@@ -94,120 +131,5 @@ func newStore(context *core.Context) *store {
 	return &store{clientMap: new(sync.Map), context: context, rLock: new(sync.RWMutex)}
 }
 
-type client struct {
-	queue         *util.Queue
-	context       *core.Context
-	username      string
-	userId        string
-	intPut        int32
-	hasClose      bool
-	remoteAddress string
-	last          *time.Time
-	rLock         *sync.RWMutex
-	lastTimeList  *list.List
-}
-
-func (client client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc) {
-	err := client.WriteMessage(iMessage)
-	writeFunc(err, err == nil)
-}
-
-func NewClient(context *core.Context, username string, remoteAddress string) *client {
-	c := &client{queue: util.NewQueue(), context: context, username: username, intPut: 0, hasClose: false, rLock: new(sync.RWMutex), remoteAddress: remoteAddress}
-	c.userId = username + strconv.FormatUint(uint64(uintptr(unsafe.Pointer(c))), 36)
-	c.lastTimeList = list.New()
-	return c
-}
-func (client *client) GetRemoteAddress() string {
-	return client.remoteAddress
-}
-
-func (client *client) writeBlank(nowTime *time.Time) {
-	client.rLock.Lock()
-	for e := client.lastTimeList.Front(); e != nil; e = e.Next() {
-		t, ok := e.Value.(*time.Time)
-		if ok {
-			if t.Before(*nowTime) {
-				log.InfoF("过期写空")
-				client.queue.Offer(nil)
-			}else{
-				break
-			}
-		}
-	}
-	client.rLock.Unlock()
-}
-
-func (client *client) WriteMessage(iMessage message.IMessage) error {
-	if client.hasClose {
-		return net.ErrClosed
-	}
-	log.DebugF("WriteMessage messageId {}", iMessage.GetMessageId())
-	client.queue.Offer(iMessage)
-	return nil
-}
-func (client *client) close(t *time.Time) bool {
-	client.rLock.Lock()
-	if client.timeOut(t) {
-		client.hasClose = true
-		client.rLock.Unlock()
-		return true
-	}
-	client.rLock.Unlock()
-	return false
-}
-
-func (client *client) isClose() bool {
-	return client.hasClose
-}
-
-func (client *client) poll(w http.ResponseWriter) bool {
-	client.rLock.RLock()
-	if client.hasClose {
-		client.rLock.RUnlock()
-		return false
-	}
-	atomic.AddInt32(&client.intPut, 1)
-	ti := time.Now().Add(time.Second * 20)
-	ele := client.lastTimeList.PushBack(&ti)
-	client.rLock.RUnlock()
-	msg, _ := client.queue.Take(time.Second * 40)
-	if msg != nil {
-		m := msg.(message.IMessage)
-		w.Write(m.GetValue(message.Text))
-	} else {
-		w.Write([]byte("[]"))
-	}
-	client.rLock.RLock()
-	atomic.AddInt32(&client.intPut, -1)
-	if atomic.LoadInt32(&client.intPut) == 0 {
-		t := time.Now().Add(time.Second * 10)
-		client.last = &t
-	}
-	client.lastTimeList.Remove(ele)
-	client.rLock.RUnlock()
-	return true
-}
-func (client *client) timeOut(t *time.Time) bool {
-	if client.intPut == 0 {
-		flag := client.last.Before(*t)
-		return flag
-	}
-	return false
-}
-func (client *client) getLastTime() *time.Time {
-	if client.intPut != 0 {
-		return nil
-	}
-	return client.last
-}
-
-func (client *client) GetId() string {
-	return client.userId
-}
-func (client *client) GetUsername() string {
-	return client.username
-}
-func (client *client) SetUsername(username string) {
-	client.username = username
+type client2 struct {
 }
