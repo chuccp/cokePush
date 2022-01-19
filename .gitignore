@@ -18,3 +18,4 @@
 .idea/vcs.xml
 .idea/workspace.xml
 .machineId
+go.sum
