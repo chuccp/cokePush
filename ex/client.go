@@ -1,6 +1,8 @@
 package ex
 
 import (
+	"context"
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
@@ -8,6 +10,7 @@ import (
 	"github.com/chuccp/queue"
 	"net/http"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -17,16 +20,21 @@ type client struct {
 	username string
 	rLock    *sync.RWMutex
 	userMap  *sync.Map
+	last     *time.Time
+	intPut   int32
 }
 type conn struct {
-	userId   string
-	username string
-	address  string
-	w        http.ResponseWriter
-	re       *http.Request
-	client   *client
-	add      *time.Time
-	isWrite  bool
+	userId     string
+	username   string
+	address    string
+	w          http.ResponseWriter
+	re         *http.Request
+	client     *client
+	add        *time.Time
+	last       *time.Time
+	isWrite    int32
+	ctx        context.Context
+	cancelFunc context.CancelFunc
 }
 
 func newConn(username string, w http.ResponseWriter, re *http.Request, client *client) *conn {
@@ -38,7 +46,7 @@ func newConn(username string, w http.ResponseWriter, re *http.Request, client *c
 	return c
 }
 func (u *conn) WriteMessage(iMessage message.IMessage) error {
-	u.client.queue.Offer(iMessage.GetString(message.Text))
+	u.client.queue.Offer(iMessage.GetValue(message.Text))
 	return nil
 }
 func (u *conn) GetId() string {
@@ -54,39 +62,75 @@ func (u *conn) SetUsername(username string) {
 	u.username = username
 }
 func (u *conn) writeBlank() {
-	if !u.isWrite {
-		u.isWrite = true
+	if u.canWrite() {
 		u.w.Write([]byte("[]"))
-		u.client.queue.Offer(nil)
+		u.cancelFunc()
 	}
 }
 func (u *conn) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc) {
 
 }
-func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) bool {
+func (u *conn) toWrite() {
+	atomic.StoreInt32(&u.isWrite, 1)
+}
+func (u *conn) canWrite() bool {
+	return atomic.CompareAndSwapInt32(&u.isWrite, 1, -1)
+}
 
+func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) {
+	atomic.AddInt32(&c.intPut, 1)
 	cnn := newConn(username, w, re, c)
-	cnn.isWrite = false
-	_, flag := c.userMap.LoadOrStore(cnn.userId, cnn)
+	v, flag := c.userMap.LoadOrStore(cnn.userId, cnn)
+	cnn = v.(*conn)
+	cnn.toWrite()
 	if !flag {
 		c.context.AddUser(cnn)
 	}
-	ti := time.Now()
+	ti := time.Now().Add(time.Second * 20)
 	cnn.add = &ti
-	v, _ := c.queue.Take(time.Second * 40)
-	if !cnn.isWrite {
-		cnn.isWrite = true
-		if v != nil {
-			m := v.(message.IMessage)
-			cnn.w.Write(m.GetValue(message.Text))
-		} else {
+	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Second*40)
+	v, _, cls := c.queue.Dequeue(cnn.ctx)
+	if cnn.canWrite() {
+		if cls {
 			cnn.w.Write([]byte("[]"))
+		} else {
+			cnn.cancelFunc()
+			if v != nil {
+				cnn.w.Write(v.([]byte))
+			}
+		}
+	} else {
+		if v != nil {
+			c.queue.Offer(v)
 		}
 	}
-	c.userMap.Delete(cnn.userId)
-	return false
+	t := time.Now().Add(time.Second * 10)
+	num := atomic.AddInt32(&c.intPut, -1)
+	if num == 0 {
+		c.last = &t
+	}
+	cnn.last = &t
+}
+func (c *client) timeoutCheck(t *time.Time) {
+	c.userMap.Range(func(key, value interface{}) bool {
+		cnn := value.(*conn)
+		if cnn.last != nil && cnn.last.Before(*t) {
+			c.context.DeleteUser(cnn)
+			c.userMap.Delete(cnn.userId)
+		}
+		return true
+	})
 }
 
+func (c *client) writeBlank(t *time.Time) {
+	c.userMap.Range(func(key, value interface{}) bool {
+		cnn := value.(*conn)
+		if cnn.add != nil && cnn.add.Before(*t) {
+			cnn.writeBlank()
+		}
+		return true
+	})
+}
 func newClient(context *core.Context, username string) *client {
 	c := &client{queue: queue.NewQueue(), context: context, username: username, rLock: new(sync.RWMutex), userMap: new(sync.Map)}
 	return c
@@ -100,36 +144,42 @@ type store struct {
 
 func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
-	v, ok := store.clientMap.Load(username)
-	if ok {
-		ct := v.(*client)
-		if !ct.poll(username, w, re) {
-
-		}
-	} else {
-
+	cl := newClient(store.context, username)
+	v, _ := store.clientMap.LoadOrStore(username, cl)
+	ct := v.(*client)
+	ct.poll(username, w, re)
+}
+func (store *store) timeoutCheck() {
+	for {
+		time.Sleep(time.Second * 10)
+		ti := time.Now()
+		log.TraceF("扫描过期连接 {}", ti)
+		store.clientMap.Range(func(key, value interface{}) bool {
+			cl := value.(*client)
+			cl.timeoutCheck(&ti)
+			return true
+		})
 	}
-}
-func (store *store) createUser(userId string, w http.ResponseWriter, re *http.Request) {
-
-}
-func (store *store) deleteUser(userId string, c *client, t *time.Time) {
-
-}
-func (store *store) timeOutCheck() {
-
 }
 
 func (store *store) writeBlank() {
-
+	log.InfoF("轮询检查过期http长链接")
+	for {
+		time.Sleep(time.Second * 10)
+		t := time.Now()
+		store.clientMap.Range(func(key, value interface{}) bool {
+			c, ok := value.(*client)
+			if ok {
+				c.writeBlank(&t)
+			}
+			return true
+		})
+	}
 }
 
 func (store *store) sendMsg(w http.ResponseWriter, re *http.Request) {
-
+	
 }
 func newStore(context *core.Context) *store {
 	return &store{clientMap: new(sync.Map), context: context, rLock: new(sync.RWMutex)}
-}
-
-type client2 struct {
 }
