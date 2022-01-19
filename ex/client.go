@@ -18,10 +18,10 @@ type client struct {
 	queue    *queue.Queue
 	context  *core.Context
 	username string
-	rLock   *sync.RWMutex
-	connMap *sync.Map
-	connNum int32
-	last    *time.Time
+	rLock    *sync.RWMutex
+	connMap  *sync.Map
+	connNum  int32
+	last     *time.Time
 	intPut   int32
 }
 type conn struct {
@@ -79,17 +79,21 @@ func (u *conn) canWrite() bool {
 }
 
 func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) {
+	c.rLock.RLock()
 	atomic.AddInt32(&c.intPut, 1)
 	cnn := newConn(username, w, re, c)
-	v, flag := c.connMap.LoadOrStore(cnn.userId, cnn)
+	v, has := c.connMap.LoadOrStore(cnn.userId, cnn)
 	cnn = v.(*conn)
 	cnn.toWrite()
-	if !flag {
-		c.connNum++
+	if !has {
+		atomic.AddInt32(&c.connNum, 1)
 		c.context.AddUser(cnn)
+	}else{
+		cnn.last = nil
 	}
 	ti := time.Now().Add(time.Second * 25)
 	cnn.add = &ti
+	c.rLock.RUnlock()
 	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Minute)
 	v, _, cls := c.queue.Dequeue(cnn.ctx)
 	if cnn.canWrite() {
@@ -116,22 +120,26 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 func (c *client) timeoutCheck(t *time.Time) {
 	c.connMap.Range(func(key, value interface{}) bool {
 		cnn := value.(*conn)
+		c.rLock.Lock()
 		if cnn.last != nil && cnn.last.Before(*t) {
 			log.InfoF("超时 {}   {}", cnn.username, cnn.userId)
 			c.context.DeleteUser(cnn)
 			c.connMap.Delete(cnn.userId)
-			c.connNum--
+			atomic.AddInt32(&c.connNum, -1)
 		}
+		c.rLock.Unlock()
 		return true
 	})
 }
 
 func (c *client) writeBlank(t *time.Time) {
 	c.connMap.Range(func(key, value interface{}) bool {
+		c.rLock.Lock()
 		cnn := value.(*conn)
 		if cnn.add != nil && cnn.add.Before(*t) {
 			cnn.writeBlank()
 		}
+		c.rLock.Unlock()
 		return true
 	})
 }
@@ -149,7 +157,9 @@ type store struct {
 func (store *store) jack(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	cl := newClient(store.context, username)
+	store.rLock.RLock()
 	v, _ := store.clientMap.LoadOrStore(username, cl)
+	store.rLock.RUnlock()
 	ct := v.(*client)
 	ct.poll(username, w, re)
 }
@@ -161,9 +171,11 @@ func (store *store) timeoutCheck() {
 		store.clientMap.Range(func(key, value interface{}) bool {
 			cl := value.(*client)
 			cl.timeoutCheck(&ti)
-			if cl.connNum==0{
+			store.rLock.Unlock()
+			if atomic.LoadInt32(&cl.connNum) == 0 {
 				store.clientMap.Delete(key)
 			}
+			store.rLock.Unlock()
 			return true
 		})
 	}
