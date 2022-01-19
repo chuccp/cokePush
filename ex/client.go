@@ -86,7 +86,7 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 	if !flag {
 		c.context.AddUser(cnn)
 	}
-	ti := time.Now().Add(time.Second * 20)
+	ti := time.Now().Add(time.Second * 25)
 	cnn.add = &ti
 	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Second*40)
 	v, _, cls := c.queue.Dequeue(cnn.ctx)
@@ -163,7 +163,7 @@ func (store *store) timeoutCheck() {
 }
 
 func (store *store) writeBlank() {
-	log.InfoF("轮询检查过期http长链接")
+	log.InfoF("轮询检查http长链接")
 	for {
 		time.Sleep(time.Second * 10)
 		t := time.Now()
@@ -178,7 +178,7 @@ func (store *store) writeBlank() {
 }
 
 func (store *store) sendMsg(w http.ResponseWriter, re *http.Request) {
-	
+
 }
 func newStore(context *core.Context) *store {
 	return &store{clientMap: new(sync.Map), context: context, rLock: new(sync.RWMutex)}
