@@ -39,6 +39,33 @@ func (query *Query) systemInfo(value ...interface{})interface{}{
 	return &systemInfo
 }
 
+func (query *Query) queryPageUser(value ...interface{}) interface{} {
+	start:=value[0].(int)
+	size:=value[1].(int)
+
+	log.InfoF("queryPageUser  start:{} size:{}",start,size)
+
+	page:=user.NewPage()
+	page.Num = (int)(query.context.UserNum())
+	if start>=page.Num{
+		return page
+	}
+	var num int = 0
+	query.context.EachUsers(func(key string, value *user.StoreUser) bool {
+
+		if num==start{
+			if size==0{
+				return false
+			}
+			size--
+			page.List = append(page.List, user.NewPageUser(value.GetUsername(),value.MachineAddress(),value.CreateTime()))
+
+		}
+		num++
+		return true
+	})
+	return page
+}
 
 func (query *Query) queryUser(value ...interface{}) interface{}{
 	var u User
@@ -56,6 +83,7 @@ func (query *Query) queryUser(value ...interface{}) interface{}{
 func (query *Query) Init() {
 	query.context.RegisterHandle("queryUser", query.queryUser)
 	query.context.RegisterHandle("systemInfo", query.systemInfo)
+	query.context.RegisterHandle("queryPageUser", query.queryPageUser)
 }
 
 type User struct {

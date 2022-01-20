@@ -120,10 +120,10 @@ func (server *Server) HandleSendMultiMessage(fromUser string, usernames *[]strin
 	for _,v:=range *usernames{
 		cu,ok:=server.userStore.GetUserMachine(v)
 		if ok{
-			usernameArray := userMap[cu.remoteAddress]
+			usernameArray := userMap[cu.machineAddress]
 			if usernameArray==nil{
 				us := make([]string,0)
-				userMap[cu.remoteAddress] = &us
+				userMap[cu.machineAddress] = &us
 				usernameArray = &us
 			}
 			*usernameArray = append(*usernameArray, v)
@@ -237,6 +237,31 @@ func (server *Server) queryMachineInfo(value ...interface{})interface{}{
 	mi.UserNum = server.context.UserNum()
 	return &mi
 }
+
+func (server *Server) clusterQueryPageUser(value ...interface{}) interface{} {
+	start:=value[0].(int)
+	pageSize:=value[1].(int)
+
+	log.InfoF("clusterQueryPageUser  start:{} pageSize:{}",start,pageSize)
+
+	var num int = 0
+	page:=user.NewPage()
+	page.Num = int(server.userStore.Num())
+	server.userStore.EachUsers(func(key string, value *cu) bool {
+		if num==start{
+			if pageSize==0{
+				return false
+			}
+			pageSize--
+			page.List = append(page.List, user.NewPageUser(value.GetUsername(),value.MachineAddress(),value.CreateTime()))
+
+		}
+		num++
+		return true
+	})
+	return page
+}
+
 func (server *Server) queryMachine() {
 	var hasQuery = false
 	for {
@@ -380,6 +405,7 @@ func (server *Server) Init(context *core.Context) {
 	context.QueryForwardHandle(server.Query)
 	context.RegisterHandle("machineInfo", server.machineInfo)
 	context.RegisterHandle("queryMachineInfo", server.queryMachineInfo)
+	context.RegisterHandle("clusterQueryPageUser", server.clusterQueryPageUser)
 	context.RegisterHandle("machineInfoId", server.machineInfoId)
 }
 func (server *Server) Name() string {
@@ -389,6 +415,8 @@ func (server *Server) Name() string {
 func (server *Server) machineInfoId(value ...interface{}) interface{} {
 	return server.machineId
 }
+
+
 
 func NewServer() *Server {
 	return &Server{}

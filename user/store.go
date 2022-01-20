@@ -26,3 +26,6 @@ func (store *Store) Has(username string) bool {
 func (store *Store) GetUserNum() int32 {
 	return store.masterMap.num
 }
+func (store *Store) EachUsers(f func(key string,user *StoreUser)bool)  {
+	store.masterMap.eachUsers(f)
+}

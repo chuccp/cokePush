@@ -1,8 +1,10 @@
 package api
 
 import (
+	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
+	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
@@ -53,11 +55,11 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 	if len(username) == 0 || len(msg) == 0 {
 		w.WriteHeader(401)
 		w.Write([]byte("username or msg can't blank"))
-	}else{
+	} else {
 		us := strings.Split(username, ",")
 		w.Write([]byte("{"))
 		var isStart = true
-		server.context.SendMultiMessage("system",us,msg, func(username string, status int) {
+		server.context.SendMultiMessage("system", us, msg, func(username string, status int) {
 			if isStart {
 				w.Write([]byte("\"" + username + "\":" + strconv.Itoa(status)))
 				isStart = false
@@ -100,6 +102,42 @@ func (server *Server) systemInfo(w http.ResponseWriter, re *http.Request) {
 	}
 }
 
+func (server *Server) onlineUser(w http.ResponseWriter, re *http.Request) {
+	start := util.GetStart(re)
+	size := util.GetSize(re)
+
+	log.InfoF("onlineUser  start:{} size:{}",start,size)
+
+	page := user.NewPage()
+
+	var cSize = 0
+	var cStart = 0
+	queryPageUser := server.context.GetHandle("queryPageUser")
+	if queryPageUser != nil {
+		p := queryPageUser(start, size).(*user.Page)
+		page.Num = p.Num + page.Num
+		cStart = start - p.Num
+		cSize = size - p.Size()
+		page.List = append(page.List, p.List...)
+
+	}
+
+	log.InfoF("onlineUser2  cStart:{} cSize:{}",cStart,cSize)
+
+	if cStart<0{
+		cStart = 0
+	}
+	clusterQueryPageUser := server.context.GetHandle("clusterQueryPageUser")
+	if clusterQueryPageUser!=nil{
+		p := clusterQueryPageUser(cStart, cSize).(*user.Page)
+		page.Num = p.Num + page.Num
+		page.List = append(page.List, p.List...)
+	}
+	data, _ := ffjson.Marshal(page)
+	w.Write(data)
+
+}
+
 func (server *Server) Start() error {
 
 	srv := &http.Server{
@@ -114,11 +152,12 @@ func (server *Server) Init(context *core.Context) {
 	server.query = newQuery(context)
 	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
-	http.HandleFunc("/sendmsg", server.sendMsg)
+	server.AddRoute("/sendmsg", server.sendMsg)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
 	server.AddRoute("/queryUser", server.queryUser)
 	server.AddRoute("/systemInfo", server.systemInfo)
+	server.AddRoute("/onlineUser", server.onlineUser)
 	context.RegisterHandle("AddRoute", server.addRoute)
 }
 

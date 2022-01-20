@@ -127,3 +127,7 @@ func (context *Context) Init() {
 	go context.dock.exchangeSendMsg()
 	go context.dock.exchangeReplyMsg()
 }
+
+func (context *Context) EachUsers(f func(key string, value *user.StoreUser) bool) {
+	context.dock.eachUsers(f)
+}

@@ -45,6 +45,10 @@ func (dock *dock) SendMessageNoReplay(iMessage message.IMessage){
 	dock.sendMsg.Offer(msg)
 }
 
+func (dock *dock)eachUsers(f func(key string, value *user.StoreUser) bool)  {
+	dock.UserStore.EachUsers(f)
+}
+
 func (dock *dock) writeUserMsg(msg *DockMessage) {
 	var flag bool
 	var ee error
