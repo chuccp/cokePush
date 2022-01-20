@@ -4,6 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/cokePush/util"
 )
 
 const (
@@ -75,7 +76,7 @@ func (query *Query) queryUser(value ...interface{}) interface{}{
 	query.context.GetUser(value[0].(string), func(user user.IUser) bool {
 		log.Info(user.GetUsername())
 		u.Username = user.GetUsername()
-		u.Conn = append(u.Conn, newConn(user.GetRemoteAddress(),"",user.GetRemoteAddress()))
+		u.Conn = append(u.Conn, newConn(user.GetRemoteAddress(),user.LastLiveTime().Format(util.TimestampFormat),user.CreateTime().Format(util.TimestampFormat)))
 		return true
 	})
 	return &u
