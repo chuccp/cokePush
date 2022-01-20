@@ -37,7 +37,18 @@ type conn struct {
 	isWrite    int32
 	ctx        context.Context
 	cancelFunc context.CancelFunc
+	lastLiveTime *time.Time
+	createTime *time.Time
 }
+
+func (u *conn) LastLiveTime() *time.Time {
+	return u.lastLiveTime
+}
+
+func (u *conn) CreateTime() *time.Time {
+	return u.createTime
+}
+
 type HttpMessage struct {
 	From string
 	Body string
@@ -95,20 +106,22 @@ func (u *conn) canWrite() bool {
 
 func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) {
 	c.rLock.RLock()
+	ti := time.Now().Add(time.Second * 25)
 	atomic.AddInt32(&c.intPut, 1)
 	cnn := newConn(username, w, re, c)
 	v, has := c.connMap.LoadOrStore(cnn.userId, cnn)
 	cnn = v.(*conn)
 	cnn.toWrite()
 	if !has {
+		cnn.createTime = &ti
 		atomic.AddInt32(&c.connNum, 1)
 		c.context.AddUser(cnn)
 	}else{
+		cnn.lastLiveTime = &ti
 		cnn.last = nil
 		cnn.w = w
 		cnn.re = re
 	}
-	ti := time.Now().Add(time.Second * 25)
 	cnn.add = &ti
 	c.rLock.RUnlock()
 	cnn.ctx, cnn.cancelFunc = context.WithTimeout(context.Background(), time.Minute)

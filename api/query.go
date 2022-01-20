@@ -71,11 +71,11 @@ func (query *Query) queryUser(value ...interface{}) interface{}{
 	var u User
 	machineInfoId:=query.context.GetHandle("machineInfoId")
 	u.Machine=machineInfoId()
-	u.RemoteAddress = make([]string,0)
+	u.Conn = make([]*Conn,0)
 	query.context.GetUser(value[0].(string), func(user user.IUser) bool {
 		log.Info(user.GetUsername())
 		u.Username = user.GetUsername()
-		u.RemoteAddress = append(u.RemoteAddress, user.GetRemoteAddress())
+		u.Conn = append(u.Conn, newConn(user.GetRemoteAddress(),"",user.GetRemoteAddress()))
 		return true
 	})
 	return &u
@@ -88,13 +88,15 @@ func (query *Query) Init() {
 
 type User struct {
 	Username string
-	RemoteAddress []string
+	Conn []*Conn
 	Machine interface{}
 }
+type Conn struct {
+	RemoteAddress string
+	LastLiveTime string
+	CreateTime string
+}
 
-// NewValue go gob要求/**/
-func (u *User)NewValue()interface{}  {
-	var nu User
-	nu.RemoteAddress = make([]string,0)
-	return &nu
+func newConn(RemoteAddress string,LastLiveTime string,CreateTime string)*Conn{
+	return &Conn{RemoteAddress,LastLiveTime,CreateTime}
 }

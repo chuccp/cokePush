@@ -8,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/user"
 	"strconv"
+	"time"
 	"unsafe"
 )
 
@@ -16,6 +17,16 @@ type client struct {
 	context *core.Context
 	id string
 	username string
+	lastLiveTime *time.Time
+	createTime *time.Time
+}
+
+func (client client) LastLiveTime() *time.Time {
+	panic("implement me")
+}
+
+func (client client) CreateTime() *time.Time {
+	panic("implement me")
 }
 
 func (client *client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc)  {
@@ -29,12 +40,15 @@ func (client *client) GetRemoteAddress() string {
 
 func NewClient(stream *net.IONetStream,context *core.Context) (*client, error) {
 	kmStream, err := km.NewStream(stream)
-	client:=&client{stream: kmStream,context:context }
+	ti:=time.Now()
+	client:=&client{stream: kmStream,context:context,createTime: &ti,lastLiveTime:&ti }
 	return client, err
 }
 func (client *client) Start() {
 	msg, err := client.stream.ReadMessage()
 	if err != nil {
+		ti:=time.Now()
+		client.lastLiveTime = &ti
 		client.handle(msg,client)
 	}
 }
@@ -50,7 +64,6 @@ func (client *client) handleMessage(iMessage message.IMessage, iUser user.IUser)
 		switch iMessage.GetMessageType() {
 		case message.LoginType:
 			client.login(iMessage, iUser)
-
 		}
 	}
 }
