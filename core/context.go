@@ -74,16 +74,16 @@ func (context *Context) SendMultiMessage(fromUser string, usernames []string, te
 		}
 	}
 	if len(localUser) > 0 {
-		go context.SendMultiMessageNoReplay(fromUser, localUser, text)
+		go context.SendMultiMessageNoReplay(fromUser, &localUser, text)
 	}
 	if len(remoteLocalUser) > 0 {
 		if context.dock.handleSendMultiMessage != nil {
-			context.dock.handleSendMultiMessage(fromUser, remoteLocalUser, text, f)
+			context.dock.handleSendMultiMessage(fromUser, &remoteLocalUser, text, f)
 		}
 	}
 }
-func (context *Context) SendMultiMessageNoReplay(fromUser string, usernames []string, text string) {
-	for _, v := range usernames {
+func (context *Context) SendMultiMessageNoReplay(fromUser string, usernames *[]string, text string) {
+	for _, v := range *usernames {
 		msg := message.CreateBasicMessage(fromUser, v, text)
 		context.SendMessageNoReplay(msg)
 	}

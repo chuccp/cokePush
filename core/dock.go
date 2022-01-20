@@ -12,7 +12,7 @@ type HandleDeleteUser func(username string)
 type HandleSendMessage func(iMessage *DockMessage, writeFunc user.WriteFunc)
 
 
-type HandleSendMultiMessage func(fromUser string, usernames []string, text string, f func(username string, status int))
+type HandleSendMultiMessage func(fromUser string, usernames *[]string, text string, f func(username string, status int))
 
 type dock struct {
 	sendMsg           *queue.Queue

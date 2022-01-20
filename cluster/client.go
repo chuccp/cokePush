@@ -154,7 +154,8 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			from := msg.GetString(message.FromUser)
 			to := msg.GetString(message.ToUser)
 			text := msg.GetString(message.Text)
-			go client.context.SendMultiMessageNoReplay(from, strings.Split(to, ";"), text)
+			ids:=strings.Split(to, ";")
+			go client.context.SendMultiMessageNoReplay(from, &ids, text)
 		}
 	}
 }
