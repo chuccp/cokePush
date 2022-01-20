@@ -94,7 +94,7 @@ func (context *Context) SendMessageNoForward(msg message.IMessage, write user.Wr
 }
 
 func (context *Context) SendMessageNoReplay(msg message.IMessage) {
-
+	context.dock.SendMessageNoReplay(msg)
 }
 func (context *Context) HandleAddUser(handleAddUser HandleAddUser) {
 	context.dock.handleAddUser = handleAddUser

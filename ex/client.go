@@ -8,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
 	"github.com/chuccp/queue"
+	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 	"sync"
 	"sync/atomic"
@@ -37,6 +38,14 @@ type conn struct {
 	ctx        context.Context
 	cancelFunc context.CancelFunc
 }
+type HttpMessage struct {
+	From string
+	Body string
+}
+
+func newHttpMessage(from string,body string) *HttpMessage {
+	return &HttpMessage{From:from,Body:body}
+}
 
 func newConn(username string, w http.ResponseWriter, re *http.Request, client *client) *conn {
 	c := &conn{w: w, re: re}
@@ -47,7 +56,13 @@ func newConn(username string, w http.ResponseWriter, re *http.Request, client *c
 	return c
 }
 func (u *conn) WriteMessage(iMessage message.IMessage) error {
-	u.client.queue.Offer(iMessage.GetValue(message.Text))
+	data,err:=ffjson.Marshal(newHttpMessage(iMessage.GetString(message.FromUser),iMessage.GetString(message.Text)))
+	if err==nil{
+		u.client.queue.Offer(data)
+	}else{
+		log.InfoF("err:{}",err)
+	}
+
 	return nil
 }
 func (u *conn) GetId() string {
@@ -90,6 +105,8 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 		c.context.AddUser(cnn)
 	}else{
 		cnn.last = nil
+		cnn.w = w
+		cnn.re = re
 	}
 	ti := time.Now().Add(time.Second * 25)
 	cnn.add = &ti
@@ -171,7 +188,7 @@ func (store *store) timeoutCheck() {
 		store.clientMap.Range(func(key, value interface{}) bool {
 			cl := value.(*client)
 			cl.timeoutCheck(&ti)
-			store.rLock.Unlock()
+			store.rLock.Lock()
 			if atomic.LoadInt32(&cl.connNum) == 0 {
 				store.clientMap.Delete(key)
 			}
