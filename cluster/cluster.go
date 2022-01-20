@@ -116,16 +116,18 @@ func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc us
 	})
 }
 func (server *Server) HandleSendMultiMessage(fromUser string, usernames []string, text string, f func(username string, status int)){
-	userMap:=make(map[string][]string)
+	log.Info("转发多人信息=11",fromUser,usernames)
+	userMap:=make(map[string]*[]string)
 	for _,v:=range usernames{
 		cu,ok:=server.userStore.GetUserMachine(v)
 		if ok{
 			usernameArray := userMap[cu.remoteAddress]
 			if usernameArray==nil{
-				usernameArray = make([]string,0)
-				userMap[cu.remoteAddress] = usernameArray
+				us := make([]string,0)
+				userMap[cu.remoteAddress] = &us
+				usernameArray = &us
 			}
-			usernameArray = append(usernameArray, v)
+			*usernameArray = append(*usernameArray, v)
 			f(v,1)
 		}else{
 			f(v,0)
@@ -133,9 +135,10 @@ func (server *Server) HandleSendMultiMessage(fromUser string, usernames []string
 	}
 	go server.sendMultiMessage(fromUser,userMap,text)
 }
-func (server *Server)sendMultiMessage(fromUser string,userMap map[string][]string,text string){
+func (server *Server)sendMultiMessage(fromUser string,userMap map[string]*[]string,text string){
+	log.Info("转发多人信息=22",fromUser,userMap)
 	for k,v:=range userMap{
-		server.request.JustCall2(k,message.CreateMultiMessage(fromUser,v,text))
+		server.request.JustCall2(k,message.CreateMultiMessage(fromUser,*v,text))
 	}
 }
 func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f func(err error, hasUser bool,host string,port int)){
