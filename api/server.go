@@ -7,6 +7,7 @@ import (
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -14,7 +15,7 @@ type Server struct {
 	serveMux *http.ServeMux
 	port     int
 	context  *core.Context
-	query *Query
+	query    *Query
 }
 
 func (server *Server) root(w http.ResponseWriter, re *http.Request) {
@@ -23,7 +24,7 @@ func (server *Server) root(w http.ResponseWriter, re *http.Request) {
 	data, _ := ffjson.Marshal(dm)
 	w.Write(data)
 }
-func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
+func (server *Server) sendMsg(w http.ResponseWriter, re *http.Request) {
 	username := util.GetUsername(re)
 	msg := util.GetMessage(re)
 	flag := util.GetChanBool()
@@ -32,9 +33,9 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 		if u {
 			w.Write([]byte("success"))
 		} else {
-			if err!=nil{
+			if err != nil {
 				w.Write([]byte(err.Error()))
-			}else{
+			} else {
 				w.Write([]byte("NO user"))
 			}
 		}
@@ -42,8 +43,30 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 			flag <- u
 		})
 	})
-	 <-flag
+	<-flag
 	util.FreeChanBool(flag)
+}
+func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
+	util.HttpCrossChunked(w)
+	username := util.GetUsername(re)
+	msg := util.GetMessage(re)
+	if len(username) == 0 || len(msg) == 0 {
+		w.WriteHeader(401)
+		w.Write([]byte("username or msg can't blank"))
+	}else{
+		us := strings.Split(username, ",")
+		w.Write([]byte("{"))
+		var isStart = true
+		server.context.SendMultiMessage("system",us,msg, func(username string, status int) {
+			if isStart {
+				w.Write([]byte("\"" + username + "\":" + strconv.Itoa(status)))
+				isStart = false
+			} else {
+				w.Write([]byte(",\"" + username + "\":" + strconv.Itoa(status)))
+			}
+		})
+		w.Write([]byte("}"))
+	}
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
 	handle := server.context.GetHandle("machineInfo")
@@ -55,10 +78,10 @@ func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {
 		w.Write([]byte("machineInfo not found"))
 	}
 }
-func (server *Server) queryUser(w http.ResponseWriter, re *http.Request){
+func (server *Server) queryUser(w http.ResponseWriter, re *http.Request) {
 
-	username:=util.GetUsername(re)
-	value:=server.context.Query("queryUser",username)
+	username := util.GetUsername(re)
+	value := server.context.Query("queryUser", username)
 	if value != nil {
 		data, _ := ffjson.Marshal(value)
 		w.Write(data)
@@ -67,8 +90,8 @@ func (server *Server) queryUser(w http.ResponseWriter, re *http.Request){
 	}
 
 }
-func (server *Server) systemInfo(w http.ResponseWriter, re *http.Request){
-	value:=server.context.Query("systemInfo")
+func (server *Server) systemInfo(w http.ResponseWriter, re *http.Request) {
+	value := server.context.Query("systemInfo")
 	if value != nil {
 		data, _ := ffjson.Marshal(value)
 		w.Write(data)
@@ -91,6 +114,7 @@ func (server *Server) Init(context *core.Context) {
 	server.query = newQuery(context)
 	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
 	server.AddRoute("/", server.root)
+	http.HandleFunc("/sendmsg", server.sendMsg)
 	server.AddRoute("/sendMessage", server.sendMessage)
 	server.AddRoute("/clusterInfo", server.clusterInfo)
 	server.AddRoute("/queryUser", server.queryUser)
@@ -116,6 +140,7 @@ func (server *Server) addRoute(value ...interface{}) interface{} {
 func (server *Server) AddRoute(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	server.serveMux.HandleFunc(pattern, handler)
 }
+
 func NewServer() *Server {
 	return &Server{serveMux: http.NewServeMux(), port: -1}
 }

@@ -16,12 +16,15 @@ type DockMessage struct {
 	flag         bool
 	err          error
 	IsForward    bool
+	replay    bool
 }
 
 func (dm *DockMessage) GetToUsername() string {
 	return dm.InputMessage.GetString(message.ToUser)
 }
 func newDockMessage(inputMessage message.IMessage, write user.WriteFunc) *DockMessage {
-	return &DockMessage{InputMessage: inputMessage, flag: false, write: write}
+	return &DockMessage{InputMessage: inputMessage, flag: false, write: write, replay: true}
 }
-
+func newDockMessageNoReplay(inputMessage message.IMessage) *DockMessage {
+	return &DockMessage{InputMessage: inputMessage, flag: false,  replay: false}
+}

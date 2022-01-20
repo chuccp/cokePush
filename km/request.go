@@ -88,8 +88,7 @@ func (q *messageQ) close() {
 
 type Conn struct {
 	status     STATUS
-	host       string
-	port       int
+	address       string
 	stream     *Stream
 	msgChanMap *sync.Map
 }
@@ -168,7 +167,7 @@ func (conn *Conn) clear() {
 }
 func (conn *Conn) start() error {
 	conn.status = CREATING
-	c := net.NewXConn(conn.host, conn.port)
+	c := net.NewXConn2(conn.address)
 	sm, err := c.Create()
 	if err != nil {
 		conn.status = BREAK
@@ -270,10 +269,10 @@ func (conn *Conn) closeTimeOutMessage() {
 	log.DebugF("扫描过期消息=======结束")
 }
 
-func newConn(host string, port int) *Conn {
-	return &Conn{status: NEW, host: host, port: port, msgChanMap: new(sync.Map)}
-}
 
+func newConn(address string) *Conn {
+	return &Conn{status: NEW, address: address, msgChanMap: new(sync.Map)}
+}
 type Request struct {
 	connMap *sync.Map
 	rLock   *sync.RWMutex
@@ -282,10 +281,8 @@ type Request struct {
 func NewRequest() *Request {
 	return &Request{connMap: new(sync.Map), rLock: new(sync.RWMutex)}
 }
-
-func (request *Request) async(host string, port int, f func(*Conn, STATUS, error)) {
-	key := strconv.Itoa(port) + host
-	val, ok := request.connMap.Load(key)
+func (request *Request) async(address string, f func(*Conn, STATUS, error)){
+	val, ok := request.connMap.Load(address)
 	if ok {
 
 		conn := val.(*Conn)
@@ -300,7 +297,7 @@ func (request *Request) async(host string, port int, f func(*Conn, STATUS, error
 		}
 	} else {
 		request.rLock.Lock()
-		val, ok = request.connMap.Load(key)
+		val, ok = request.connMap.Load(address)
 		if ok {
 			conn := val.(*Conn)
 			if conn.status == NEW || conn.status == BREAK {
@@ -312,13 +309,16 @@ func (request *Request) async(host string, port int, f func(*Conn, STATUS, error
 				f(conn, conn.status, nil)
 			}
 		} else {
-			cn := newConn(host, port)
-			request.connMap.Store(key, cn)
+			cn := newConn(address)
+			request.connMap.Store(address, cn)
 			cn.status = CREATING
 			request.rLock.Unlock()
 			connStart(cn, f)
 		}
 	}
+}
+func (request *Request) async2(host string, port int, f func(*Conn, STATUS, error)) {
+	request.async(host+":"+strconv.Itoa(port),f)
 }
 
 func connStart(cn *Conn, f func(*Conn, STATUS, error)) {
@@ -334,7 +334,7 @@ func connStart(cn *Conn, f func(*Conn, STATUS, error)) {
 func (request *Request) Call(host string, port int, msg message.IMessage) (iMsg message.IMessage, cnn *Conn, err error) {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	request.async(host, port, func(conn *Conn, status STATUS, err1 error) {
+	request.async2(host, port, func(conn *Conn, status STATUS, err1 error) {
 		cnn = conn
 		if status == CONNING {
 			conn.asyncWrite(msg, func(iMessage message.IMessage, b bool, err2 error) {
@@ -355,7 +355,7 @@ func (request *Request) Call(host string, port int, msg message.IMessage) (iMsg 
 }
 func (request *Request) Async(host string, port int, iMessage message.IMessage, callBackFunc CallBackFunc) {
 
-	request.async(host, port, func(conn *Conn, status STATUS, err error) {
+	request.async2(host, port, func(conn *Conn, status STATUS, err error) {
 		if status == CONNING {
 			conn.asyncWrite(iMessage,callBackFunc)
 		} else if status==CREATING{
@@ -365,8 +365,15 @@ func (request *Request) Async(host string, port int, iMessage message.IMessage, 
 		}
 	})
 }
+func (request *Request) JustCall2(remoteAddress string, message message.IMessage) {
+	request.async(remoteAddress, func(conn *Conn, status STATUS, err error) {
+		if status == CONNING {
+			conn.justWrite(message)
+		}
+	})
+}
 func (request *Request) JustCall(host string, port int, message message.IMessage) {
-	request.async(host, port, func(conn *Conn, status STATUS, err error) {
+	request.async2(host, port, func(conn *Conn, status STATUS, err error) {
 		if status == CONNING {
 			conn.justWrite(message)
 		}

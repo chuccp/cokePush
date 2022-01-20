@@ -10,6 +10,7 @@ type cu struct {
 	username string
 	remoteHost string
 	remotePort int
+	remoteAddress string
 }
 func(u *cu)WriteMessage(iMessage message.IMessage) error{
 	return nil
@@ -20,6 +21,9 @@ func(u *cu)GetId() string{
 func(u *cu)GetUsername() string{
 	return u.username
 }
+func(u *cu)RemoteAddress() string{
+	return u.remoteAddress
+}
 func(u *cu)SetUsername(username string){
 	u.username = username
 	u.userId = username+u.remoteHost+strconv.Itoa(u.remotePort)
@@ -27,6 +31,7 @@ func(u *cu)SetUsername(username string){
 func newCu(username string,remoteHost string,remotePort int)*cu  {
 	u:=&cu{username:username,remoteHost:remoteHost,remotePort:remotePort}
 	u.SetUsername(username)
+	u.remoteAddress = remoteHost+":"+strconv.Itoa(remotePort)
 	return u
 }
 

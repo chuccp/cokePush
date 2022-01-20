@@ -13,24 +13,22 @@ type userStore struct {
 func newUserStore() *userStore {
 	return &userStore{store: new(sync.Map)}
 }
-func (userStore *userStore) add(user IUser) (bool,int32) {
+func (userStore *userStore) add(user IUser) (bool, int32) {
 	_, fa := userStore.store.LoadOrStore(user.GetId(), user)
 	if !fa {
-		atomic.AddInt32(&userStore.num,1)
-		return true,userStore.num
+		return true, atomic.AddInt32(&userStore.num, 1)
 	}
-	return false,userStore.num
+	return false, userStore.num
 }
-func (userStore *userStore) delete(user IUser) (bool,int32) {
+func (userStore *userStore) delete(user IUser) (bool, int32) {
 	id := user.GetId()
 	_, fa := userStore.store.LoadAndDelete(id)
 	if fa {
-		atomic.AddInt32(&userStore.num,-1)
-		return true,userStore.num
+		return true, atomic.AddInt32(&userStore.num, -1)
 	}
-	return false,userStore.num
+	return false, userStore.num
 }
-func (userStore *userStore)each(f func(IUser)bool)  {
+func (userStore *userStore) each(f func(IUser) bool) {
 	userStore.store.Range(func(key, value interface{}) bool {
 		return f(value.(IUser))
 	})
@@ -52,17 +50,15 @@ func (index *indexMap) add(user IUser) bool {
 	index.rLock.Lock()
 	v, ok := index.uMap.Load(username)
 	if ok {
-		us, ok := v.(*userStore)
-		if ok {
-			us.add(user)
-		}
-	}else{
-	 	us:=newUserStore()
+		us := v.(*userStore)
+		us.add(user)
+	} else {
+		us := newUserStore()
 		us.add(user)
 		index.uMap.Store(username, us)
-		 atomic.AddInt32(&index.num,1)
+		atomic.AddInt32(&index.num, 1)
 		index.rLock.Unlock()
-		 return true
+		return true
 	}
 	index.rLock.Unlock()
 	return false
@@ -70,28 +66,32 @@ func (index *indexMap) add(user IUser) bool {
 
 func (index *indexMap) delete(user IUser) bool {
 	username := user.GetUsername()
-	index.rLock.Lock()
+	v, ok := index.uMap.Load(username)
+	if ok {
+		us := v.(*userStore)
+		_, num := us.delete(user)
+		if num == 0 {
+			index.rLock.Lock()
+			if us.num == 0 {
+				index.uMap.Delete(username)
+				atomic.AddInt32(&index.num, -1)
+			}
+			index.rLock.Unlock()
+			return true
+		}
+
+	}
+	return false
+}
+func (index *indexMap)has(username string)bool{
+	 _,ok:=index.uMap.Load(username)
+	 return ok
+}
+func (index *indexMap) each(username string, f func(IUser) bool) bool {
 	v, ok := index.uMap.Load(username)
 	if ok {
 		us, ok := v.(*userStore)
 		if ok {
-			_,num:=us.delete(user)
-			if num==0{
-				index.uMap.Delete(username)
-				atomic.AddInt32(&index.num,-1)
-				index.rLock.Unlock()
-				return true
-			}
-		}
-	}
-	index.rLock.Unlock()
-	return false
-}
-func (index *indexMap)each(username string,f func(IUser)bool)bool{
-	v, ok := index.uMap.Load(username)
-	if ok{
-		us, ok := v.(*userStore)
-		if ok{
 			us.each(f)
 		}
 	}

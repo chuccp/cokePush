@@ -1,5 +1,7 @@
 package message
 
+import "bytes"
+
 type BasicMessage struct {
 	*Message
 }
@@ -31,6 +33,24 @@ func (basic *BasicMessage)SetExMsgId(msgId string)  {
 func (basic *BasicMessage)GetExMsgId()string  {
 	return basic.GetString(ExMessageId)
 }
+
+type MultiMessage struct {
+	*Message
+}
+
+func CreateMultiMessage(fromUser string, toUser[] string, messageText string)*MultiMessage{
+	bm := &MultiMessage{Message: CreateMessage(OrdinaryMessageClass, MultiMessageType)}
+	bm.SetString(FromUser, fromUser)
+	var buffer  = bytes.NewBuffer([]byte{})
+	for _,v:=range toUser{
+		buffer.WriteString(v)
+		buffer.WriteString(";")
+	}
+	bm.SetValue(ToUser, buffer.Bytes())
+	bm.SetString(Text, messageText)
+	return bm
+}
+
 type LoginMessage struct {
 	*Message
 }

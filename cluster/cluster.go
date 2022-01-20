@@ -115,7 +115,29 @@ func (server *Server) HandleSendMessage(iMessage *core.DockMessage, writeFunc us
 		}
 	})
 }
-
+func (server *Server) HandleSendMultiMessage(fromUser string, usernames []string, text string, f func(username string, status int)){
+	userMap:=make(map[string][]string)
+	for _,v:=range usernames{
+		cu,ok:=server.userStore.GetUserMachine(v)
+		if ok{
+			usernameArray := userMap[cu.remoteAddress]
+			if usernameArray==nil{
+				usernameArray = make([]string,0)
+				userMap[cu.remoteAddress] = usernameArray
+			}
+			usernameArray = append(usernameArray, v)
+			f(v,1)
+		}else{
+			f(v,0)
+		}
+	}
+	go server.sendMultiMessage(fromUser,userMap,text)
+}
+func (server *Server)sendMultiMessage(fromUser string,userMap map[string][]string,text string){
+	for k,v:=range userMap{
+		server.request.JustCall2(k,message.CreateMultiMessage(fromUser,v,text))
+	}
+}
 func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f func(err error, hasUser bool,host string,port int)){
 	username:=iMessage.GetToUsername()
 	u,ok:=server.userStore.GetUserMachine(username)
@@ -353,6 +375,7 @@ func (server *Server) Init(context *core.Context) {
 	context.HandleAddUser(server.HandleAddUser)
 	context.HandleDeleteUser(server.HandleDeleteUser)
 	context.HandleSendMessage(server.HandleSendMessage)
+	context.HandleSendMultiMessage(server.HandleSendMultiMessage)
 	context.QueryForwardHandle(server.Query)
 	context.RegisterHandle("machineInfo", server.machineInfo)
 	context.RegisterHandle("queryMachineInfo", server.queryMachineInfo)

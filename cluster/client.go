@@ -8,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/pquerna/ffjson/ffjson"
+	"strings"
 )
 
 type Client struct {
@@ -48,43 +49,43 @@ func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
 }
-func (client *Client) queryType(iMsg message.IMessage){
-	qname:=iMsg.GetString(message.QueryName)
-	iv:=make([]interface{},0)
-	keys:=iMsg.GetKeys()
-	for _,v:=range keys[1:]{
-		iv = append(iv,iMsg.GetString(v))
+func (client *Client) queryType(iMsg message.IMessage) {
+	qname := iMsg.GetString(message.QueryName)
+	iv := make([]interface{}, 0)
+	keys := iMsg.GetKeys()
+	for _, v := range keys[1:] {
+		iv = append(iv, iMsg.GetString(v))
 	}
-	handle:=client.context.GetHandle(qname)
-	if handle==nil{
-		log.ErrorF("can not find handle:{}",qname)
-		qm:=backQueryError(iMsg.GetMessageId())
+	handle := client.context.GetHandle(qname)
+	if handle == nil {
+		log.ErrorF("can not find handle:{}", qname)
+		qm := backQueryError(iMsg.GetMessageId())
 		client.stream.WriteMessage(qm)
 		return
 	}
-	v:=handle(iv...)
-	if v!=nil{
-		data,err:=ffjson.Marshal(v)
-		if err==nil{
-			qm:=backQueryOk(data,iMsg.GetMessageId())
+	v := handle(iv...)
+	if v != nil {
+		data, err := ffjson.Marshal(v)
+		if err == nil {
+			qm := backQueryOk(data, iMsg.GetMessageId())
 			client.stream.WriteMessage(qm)
-		}else{
-			qm:=backQueryError(iMsg.GetMessageId())
+		} else {
+			qm := backQueryError(iMsg.GetMessageId())
 			client.stream.WriteMessage(qm)
 		}
 
-	}else{
-		qm:=backQueryError(iMsg.GetMessageId())
+	} else {
+		qm := backQueryError(iMsg.GetMessageId())
 		client.stream.WriteMessage(qm)
 	}
 }
 func (client *Client) queryMachineInfoType(iMsg message.IMessage) {
-	mi:=client.server.queryMachineInfo()
-	data,err:=ffjson.Marshal(mi)
-	if err==nil{
+	mi := client.server.queryMachineInfo()
+	data, err := ffjson.Marshal(mi)
+	if err == nil {
 		msg := backQueryInfoMachine(data, iMsg.GetMessageId())
 		client.stream.WriteMessage(msg)
-	}else{
+	} else {
 		msg := backQueryInfoMachine([]byte(`{"Address":"`+client.server.machineId+`@`+err.Error()+`"}`), iMsg.GetMessageId())
 		client.stream.WriteMessage(msg)
 	}
@@ -115,10 +116,10 @@ func (client *Client) QueryMachineType(iMsg message.IMessage) {
 	client.stream.WriteMessage(msg)
 }
 func (client *Client) handleMessage(msg message.IMessage) {
-	log.DebugF("请求来了 class:{}   type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(),msg.GetMessageId())
+	log.DebugF("请求来了 class:{}   type:{} msgId:{}", msg.GetClassId(), msg.GetMessageType(), msg.GetMessageId())
 	switch msg.GetClassId() {
 	case message.FunctionMessageClass:
-		log.DebugF("FunctionMessageClass：",msg.GetMessageId())
+		log.DebugF("FunctionMessageClass：", msg.GetMessageId())
 		messageType := msg.GetMessageType()
 		if messageType == message.QueryMachineBasicType {
 			client.queryMachineBasicType(msg)
@@ -126,29 +127,34 @@ func (client *Client) handleMessage(msg message.IMessage) {
 			client.QueryMachineType(msg)
 		} else if messageType == message.QueryMachineInfoType {
 			client.queryMachineInfoType(msg)
-		}else if messageType==message.AddUserType{
-			username:=msg.GetString(message.USERNAME)
-			machineId:=msg.GetString(message.MaChineId)
-			client.server.addUser(username,machineId)
-		}else if messageType==message.DeleteUserType{
-			username:=msg.GetString(message.USERNAME)
-			machineId:=msg.GetString(message.MaChineId)
-			client.server.delete(username,machineId)
-		}else if messageType==message.QueryType{
+		} else if messageType == message.AddUserType {
+			username := msg.GetString(message.USERNAME)
+			machineId := msg.GetString(message.MaChineId)
+			client.server.addUser(username, machineId)
+		} else if messageType == message.DeleteUserType {
+			username := msg.GetString(message.USERNAME)
+			machineId := msg.GetString(message.MaChineId)
+			client.server.delete(username, machineId)
+		} else if messageType == message.QueryType {
 			client.queryType(msg)
 		}
 	case message.LiveMessageClass:
-		log.DebugF("LiveMessageClass：",msg.GetMessageId())
+		log.DebugF("LiveMessageClass：", msg.GetMessageId())
 		lm := message.CreateLiveMessage()
 		client.stream.WriteMessage(lm)
 	case message.OrdinaryMessageClass:
 		messageType := msg.GetMessageType()
-		if messageType==message.BasicMessageType{
+		if messageType == message.BasicMessageType {
 			client.context.SendMessageNoForward(msg, func(err error, hasUser bool) {
-				nMsg:=message.CreateBackBasicMessage(hasUser,msg.GetMessageId())
-				err2:=client.stream.WriteMessage(nMsg)
-				log.DebugF("收到普通文本信息 msgId:{} 处理信息1:{}   {}",msg.GetMessageId(),err,err2)
+				nMsg := message.CreateBackBasicMessage(hasUser, msg.GetMessageId())
+				err2 := client.stream.WriteMessage(nMsg)
+				log.DebugF("收到普通文本信息 msgId:{} 处理信息1:{}   {}", msg.GetMessageId(), err, err2)
 			})
+		} else if messageType == message.MultiMessageType {
+			from := msg.GetString(message.FromUser)
+			to := msg.GetString(message.ToUser)
+			text := msg.GetString(message.Text)
+			go client.context.SendMultiMessageNoReplay(from, strings.Split(to, ";"), text)
 		}
 	}
 }

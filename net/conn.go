@@ -9,13 +9,18 @@ import (
 type XConn struct {
 	port   int
 	host   string
+	address string
 	addr   *net.TCPAddr
 	stream *IONetStream
 }
 
 func NewXConn(host string, port int) *XConn {
-	addr, _ := net.ResolveTCPAddr("tcp", host+":"+strconv.Itoa(port))
-	return &XConn{port: port, host: host, addr: addr}
+	addr:= host+":"+strconv.Itoa(port)
+	return NewXConn2(addr)
+}
+func NewXConn2(address string) *XConn {
+	addr, _ := net.ResolveTCPAddr("tcp", address)
+	return &XConn{port: addr.Port, host: addr.Network(), addr: addr}
 }
 func (x *XConn) Create() (*IONetStream,error) {
 	log.InfoF("创建连接 {}",x.addr.String())

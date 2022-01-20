@@ -11,6 +11,9 @@ type HandleAddUser func(iUser user.IUser)
 type HandleDeleteUser func(username string)
 type HandleSendMessage func(iMessage *DockMessage, writeFunc user.WriteFunc)
 
+
+type HandleSendMultiMessage func(fromUser string, usernames []string, text string, f func(username string, status int))
+
 type dock struct {
 	sendMsg           *queue.Queue
 	replyMsg          *queue.Queue
@@ -18,6 +21,7 @@ type dock struct {
 	handleAddUser     HandleAddUser
 	handleDeleteUser  HandleDeleteUser
 	handleSendMessage HandleSendMessage
+	handleSendMultiMessage HandleSendMultiMessage
 	//sendIndexNum      uint32
 	//replyIndexNum     uint32
 }
@@ -32,6 +36,11 @@ func (dock *dock) sendMessage(iMessage message.IMessage, write user.WriteFunc) {
 }
 func (dock *dock) SendMessageNoForward(iMessage message.IMessage, write user.WriteFunc) {
 	msg := newDockMessage(iMessage, write)
+	msg.IsForward = false
+	dock.sendMsg.Offer(msg)
+}
+func (dock *dock) SendMessageNoReplay(iMessage message.IMessage){
+	msg := newDockMessageNoReplay(iMessage)
 	msg.IsForward = false
 	dock.sendMsg.Offer(msg)
 }
@@ -83,8 +92,10 @@ func (dock *dock) UserNum() int32 {
 }
 
 func (dock *dock) replyMessage(msg *DockMessage) {
-	log.DebugF("加入消息反馈队列:{}", msg.InputMessage.GetMessageId())
-	dock.replyMsg.Offer(msg)
+	if msg.replay{
+		log.DebugF("加入消息反馈队列:{}", msg.InputMessage.GetMessageId())
+		dock.replyMsg.Offer(msg)
+	}
 }
 func (dock *dock) exchangeReplyMsg() {
 	log.DebugF("启动信息反馈处理")

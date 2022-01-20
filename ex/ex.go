@@ -4,6 +4,7 @@ import (
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
+	"github.com/chuccp/cokePush/util"
 	"net/http"
 )
 
@@ -36,6 +37,7 @@ func (server *Server) Init(context *core.Context) {
 
 }
 func (server *Server) ex(w http.ResponseWriter, re *http.Request) {
+	util.HttpCross(w)
 	server.store.jack(w,re)
 
 }
