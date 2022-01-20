@@ -114,6 +114,7 @@ func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) 
 	cnn.toWrite()
 	if !has {
 		cnn.createTime = &ti
+		cnn.lastLiveTime = &ti
 		atomic.AddInt32(&c.connNum, 1)
 		c.context.AddUser(cnn)
 	}else{

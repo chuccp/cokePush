@@ -21,12 +21,12 @@ type client struct {
 	createTime *time.Time
 }
 
-func (client client) LastLiveTime() *time.Time {
-	panic("implement me")
+func (client *client) LastLiveTime() *time.Time {
+	return client.lastLiveTime
 }
 
-func (client client) CreateTime() *time.Time {
-	panic("implement me")
+func (client *client) CreateTime() *time.Time {
+	return client.createTime
 }
 
 func (client *client) WriteMessageFunc(iMessage message.IMessage, writeFunc user.WriteFunc)  {
