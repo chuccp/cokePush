@@ -38,11 +38,11 @@ type MultiMessage struct {
 	*Message
 }
 
-func CreateMultiMessage(fromUser string, toUser[] string, messageText string)*MultiMessage{
+func CreateMultiMessage(fromUser string, toUser *[]string, messageText string)*MultiMessage{
 	bm := &MultiMessage{Message: CreateMessage(OrdinaryMessageClass, MultiMessageType)}
 	bm.SetString(FromUser, fromUser)
 	var buffer  = bytes.NewBuffer([]byte{})
-	for _,v:=range toUser{
+	for _,v:=range *toUser{
 		buffer.WriteString(v)
 		buffer.WriteString(";")
 	}

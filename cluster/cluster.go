@@ -136,7 +136,7 @@ func (server *Server) HandleSendMultiMessage(fromUser string, usernames *[]strin
 }
 func (server *Server)sendMultiMessage(fromUser string,userMap map[string]*[]string,text string){
 	for k,v:=range userMap{
-		server.request.JustCall2(k,message.CreateMultiMessage(fromUser,*v,text))
+		server.request.JustCall2(k,message.CreateMultiMessage(fromUser,v,text))
 	}
 }
 func (server *Server)sendStoreMachineDockMessage(iMessage *core.DockMessage,f func(err error, hasUser bool,host string,port int)){
