@@ -48,7 +48,6 @@ func (query *Query) queryUser(value ...interface{}) interface{}{
 	query.context.GetUser(value[0].(string), func(user user.IUser) bool {
 		log.Info(user.GetUsername())
 		u.Username = user.GetUsername()
-		u.Id = user.GetId()
 		u.RemoteAddress = append(u.RemoteAddress, user.GetRemoteAddress())
 		return true
 	})
@@ -61,7 +60,6 @@ func (query *Query) Init() {
 
 type User struct {
 	Username string
-	Id string
 	RemoteAddress []string
 	Machine interface{}
 }
