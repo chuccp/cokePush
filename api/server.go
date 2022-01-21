@@ -68,6 +68,7 @@ func (server *Server) sendMessage(w http.ResponseWriter, re *http.Request) {
 			}
 		})
 		w.Write([]byte("}"))
+
 	}
 }
 func (server *Server) clusterInfo(w http.ResponseWriter, re *http.Request) {

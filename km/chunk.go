@@ -105,22 +105,21 @@ func newChunk0(chunk *chunk) *chunk0 {
 }
 
 func (chunk0 chunk0) toByte() []byte {
-	bytesArray := make([]byte, 0)
-	//写chunk
-	bytesArray = append(bytesArray, chunk0.chunk.toByte()...)
-	//写header
-	bytesArray = append(bytesArray, chunk0.classId)
-	bytesArray = append(bytesArray, chunk0.messageType)
-	bytesArray = append(bytesArray, util.U32TOBytes(chunk0.time)...)
-	bytesArray = append(bytesArray, util.U32TOBytes(chunk0.messageId)...)
-	bytesArray = append(bytesArray, lengthToBytes(chunk0.messageLength)...)
-	//写body
+	bytesArray := util.NewBuff()
+	bytesArray.Write(chunk0.chunk.toByte())
+	bytesArray.WriteByte( chunk0.classId)
+	bytesArray.WriteByte( chunk0.messageType)
+	bytesArray.Write( util.U32TOBytes(chunk0.time))
+	bytesArray.Write( util.U32TOBytes(chunk0.messageId))
+	bytesArray.Write( lengthToBytes(chunk0.messageLength))
 	if chunk0.messageLength>0{
-		bytesArray = append(bytesArray, chunk0.key)
-		bytesArray = append(bytesArray, lengthToBytes(chunk0.dataLen)...)
-		bytesArray = append(bytesArray, chunk0.data...)
+		bytesArray.WriteByte(  chunk0.key)
+		bytesArray.Write( lengthToBytes(chunk0.dataLen))
+		bytesArray.Write(  chunk0.data)
 	}
-	return bytesArray
+	data:=bytesArray.Bytes()
+	util.FreeBuff(bytesArray)
+	return data
 }
 
 
@@ -140,14 +139,14 @@ func newChunk1(chunk *chunk) *chunk1 {
 	return &chunk1{chunk: chunk}
 }
 func (chunk1 chunk1) toByte() []byte {
-	bytesArray := make([]byte, 0)
-	bytesArray = append(bytesArray, chunk1.chunk.toByte()...)
-	//写body
-	bytesArray = append(bytesArray, chunk1.key)
-	bytesArray = append(bytesArray, lengthToBytes(chunk1.dataLen)...)
-	bytesArray = append(bytesArray, chunk1.data...)
-
-	return bytesArray
+	bytesArray := util.NewBuff()
+	bytesArray.Write(chunk1.chunk.toByte())
+	bytesArray.WriteByte(chunk1.key)
+	bytesArray.Write(lengthToBytes(chunk1.dataLen))
+	bytesArray.Write(chunk1.data)
+	data:=bytesArray.Bytes()
+	util.FreeBuff(bytesArray)
+	return data
 }
 
 type chunk2 struct {
@@ -162,10 +161,12 @@ func createChunk2(chunkId uint16, data []byte) *chunk2 {
 	return &chunk2{chunk: createChunkHeader(2, chunkId), data: data}
 }
 func (chunk2 chunk2) toByte() []byte {
-	bytesArray := make([]byte, 0)
-	bytesArray = append(bytesArray, chunk2.chunk.toByte()...)
-	bytesArray = append(bytesArray, chunk2.data...)
-	return bytesArray
+	bytesArray := util.NewBuff()
+	bytesArray.Write(chunk2.chunk.toByte())
+	bytesArray.Write(chunk2.data)
+	data:=bytesArray.Bytes()
+	util.FreeBuff(bytesArray)
+	return data
 }
 
 type chunk struct {
