@@ -1,12 +1,12 @@
 package cluster
 
 import (
-	"bytes"
 	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
+	"github.com/chuccp/cokePush/util"
 	"github.com/pquerna/ffjson/ffjson"
 	"strings"
 	"time"
@@ -116,12 +116,13 @@ func (client *Client) QueryMachineType(iMsg message.IMessage) {
 			}
 		}
 	}
-	var buff bytes.Buffer
-	client.server.machineMap.getMachines(&buff)
+	var buff  = util.NewBuff()
+	client.server.machineMap.getMachines(buff)
 	buff.WriteString(client.stream.LocalAddr().String())
 	buff.WriteString("|")
 	buff.WriteString(client.server.machineId)
 	data := buff.Bytes()
+	util.FreeBuff(buff)
 	log.DebugF("发送数据：{}", string(data))
 	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)
