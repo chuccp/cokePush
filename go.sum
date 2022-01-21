@@ -8,6 +8,8 @@ github.com/chuccp/coke-log v0.0.0-20211230034625-ea1aa70b3367 h1:v1jjbrZwmequFQF
 github.com/chuccp/coke-log v0.0.0-20211230034625-ea1aa70b3367/go.mod h1:vcmaA7lRRZ/bqD8y5B67/2+bsAsBj+Cs7A3dmyNDv6s=
 github.com/chuccp/coke-log v0.0.0-20220119044648-3ee68e7726ec h1:f051y1PSdM6JzP2GAKSnRmVJY1+03CY3i35KnHuLcdA=
 github.com/chuccp/coke-log v0.0.0-20220119044648-3ee68e7726ec/go.mod h1:SOKrN55EuBWiDKuKwQ7guDueJd52KR4r2uqv8WJD6T0=
+github.com/chuccp/coke-log v0.0.0-20220121030202-d8f6bd4dbaf0 h1:4z4e10SE++lmb2w0rmD87HnHRNu9BhqOtfyeEdguato=
+github.com/chuccp/coke-log v0.0.0-20220121030202-d8f6bd4dbaf0/go.mod h1:SOKrN55EuBWiDKuKwQ7guDueJd52KR4r2uqv8WJD6T0=
 github.com/chuccp/queue v0.0.0-20220119040418-7e9f9fc6ab99 h1:+8oqH5g/7cWJ46aSww8flcWNmB3l+X6FiyuPJRnBkpU=
 github.com/chuccp/queue v0.0.0-20220119040418-7e9f9fc6ab99/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
 github.com/chuccp/queue v0.0.0-20220120162938-42e988ab7223 h1:BOWGhbsRnlrpgrfvWdrA1y1sI0IPDCfsJeFNP303bgM=
