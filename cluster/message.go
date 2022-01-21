@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"github.com/chuccp/cokePush/message"
+	"github.com/chuccp/cokePush/util"
 	"strconv"
 	"strings"
 )
@@ -73,13 +74,15 @@ func toBytes(localPort int,machineId string)[]byte  {
 	return toBytes2(localHost, localPort,machineId)
 }
 func toBytes2(host string,port int,machineId string)[]byte  {
-	var buff bytes.Buffer
+	var buff  = util.NewBuff()
 	buff.WriteString(host)
 	buff.WriteByte(':')
 	buff.WriteString(strconv.Itoa(port))
 	buff.WriteByte('|')
 	buff.WriteString(machineId)
-	return buff.Bytes()
+	data:= buff.Bytes()
+	util.FreeBuff(buff)
+	return data
 }
 func toBytes3(buff *bytes.Buffer,machine *machine)  {
 	buff.WriteString(machine.remoteHost)
