@@ -9,6 +9,7 @@ import (
 	"github.com/chuccp/cokePush/net"
 	"github.com/pquerna/ffjson/ffjson"
 	"strings"
+	"time"
 )
 
 type Client struct {
@@ -18,7 +19,6 @@ type Client struct {
 }
 
 func (client *Client) Start() {
-
 	for {
 		msg, err := client.stream.ReadMessage()
 		if err == nil {
@@ -28,9 +28,20 @@ func (client *Client) Start() {
 			break
 		}
 	}
-
 }
+/** 测试io性能
+ */
+func (client *Client)test(){
+	time.Sleep(time.Second*5)
 
+	var max  = 10000
+	ti:=time.Now().UnixNano()
+	for i:=0;i<max;i++{
+		live:=message.CreateLiveMessage()
+		client.stream.WriteMessage(live)
+	}
+	log.InfoF("时间：平均{}",(time.Now().UnixNano()-ti)/(int64(max)))
+}
 // queryMachineInfoType 获取当前服务器信息
 func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 	rAddress := iMsg.GetString(message.LocalMachineAddress)

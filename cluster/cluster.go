@@ -46,6 +46,8 @@ func (server *Server) Start() error {
 	return nil
 }
 
+
+
 func (server *Server) HandleAddUser(iUser user.IUser) {
 	log.InfoF("发送添加用户")
 	msg:=newAddUserMessage(server.machineId,iUser.GetUsername())
