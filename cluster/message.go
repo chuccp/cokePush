@@ -31,7 +31,8 @@ func newQueryMachineMessage(localPort int,machineId string)*queryMachineMessage 
 }
 func newQueryMachineBasic(localPort int,machineId string)*queryMachineMessage  {
 	bm := &queryMachineMessage{Message: message.CreateMessage(message.FunctionMessageClass, message.QueryMachineBasicType)}
-	bm.SetValue(message.LocalMachineAddress,toBytes(localPort,machineId))
+	dd:=toBytes(localPort,machineId)
+	bm.SetValue(message.LocalMachineAddress,dd)
 	return bm
 }
 //获取集群信息
@@ -99,7 +100,12 @@ func toMachine(machineAddress string)(*machine,error)  {
 	}
 	address := m[0]
 	addresses := strings.Split(address,":")
-	host:= addresses[0]
+
+	if len(addresses)<2{
+		return nil, errors.New(address+" error")
+	}
+
+		host:= addresses[0]
 	port,err:=strconv.Atoi(addresses[1])
 	if err!=nil{
 		return nil, err

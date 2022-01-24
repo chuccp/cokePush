@@ -45,7 +45,7 @@ func (client *Client)test(){
 // queryMachineInfoType 获取当前服务器信息
 func (client *Client) queryMachineBasicType(iMsg message.IMessage) {
 	rAddress := iMsg.GetString(message.LocalMachineAddress)
-	log.DebugF("收到数据 queryMachineBasicType rAddress:{}  msgId:{}", rAddress, iMsg.GetMessageId())
+	log.InfoF("收到数据 queryMachineBasicType rAddress:{}  msgId:{}", rAddress, iMsg.GetMessageId())
 	m, err := toMachine(rAddress)
 	if err == nil {
 		addr := client.stream.RemoteAddr()

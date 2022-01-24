@@ -268,7 +268,7 @@ func (server *Server) queryMachine() {
 	var hasQuery = false
 	for {
 		time.Sleep(time.Second * 2)
-		log.DebugF("查询机器信息 hasQuery:{} ", hasQuery)
+		log.InfoF("查询机器信息 hasQuery:{} ", hasQuery)
 		if !hasQuery && !server.machine.isLocal {
 			err := server.queryMachineBasic()
 			log.DebugF("查询机器信息 hasQuery:{} ", hasQuery, err)
@@ -288,8 +288,8 @@ func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.C
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
 	msg, conn, err := server.request.Call(host, port, qBasic)
 	if err == nil {
-		machine := msg.GetString(message.BackMachineAddress)
-		m, err := toMachine(machine)
+		mh := msg.GetString(message.BackMachineAddress)
+		m, err := toMachine(mh)
 		if err == nil {
 			return m, conn, nil
 		} else {
@@ -303,25 +303,26 @@ func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.C
 func (server *Server) queryMachineBasic() error {
 
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
+	log.InfoF("qBasic  {}   {}",qBasic.GetClassId(),qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qBasic)
 	if err == nil {
 		if message.BackMessageClass == msg.GetClassId() {
 			if message.BackMessageOKType == msg.GetMessageType() {
-				machine := msg.GetString(message.BackMachineAddress)
-				if len(machine) > 0 {
-					m, err := toMachine(machine)
+				mac := msg.GetString(message.BackMachineAddress)
+				if len(mac) > 0 {
+					m, err := toMachine(mac)
 					if err == nil {
 						if m.machineId == server.machineId {
 							m.isLocal = true
 							server.machine.isLocal = true
-							log.InfoF("连接到自己关闭连接 :{}", machine)
+							log.InfoF("连接到自己关闭连接 :{}", mac)
 							conn.Close()
 							return nil
 						} else {
 							m.remoteHost = server.machine.remoteHost
 							m.remotePort = server.machine.remotePort
 							if server.machineMap.add(m) {
-								log.InfoF("queryMachineInfo 添加新的机器连接", machine)
+								log.InfoF("queryMachineInfo 添加新的机器连接", mac)
 							}
 							return nil
 						}
@@ -341,7 +342,7 @@ func (server *Server) queryMachineBasic() error {
 func (server *Server) getMachineList() {
 	qMsg := newQueryMachineMessage(server.port, server.machineId)
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
-		log.DebugF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost, remotePort)
+		log.InfoF("!!!!!!!getMachineList  remoteHost：{} remotePort：{}", remoteHost, remotePort)
 		msg, _, err := server.request.Call(remoteHost, remotePort, qMsg)
 		if err != nil {
 			log.ErrorF("getMachineList err:{}  remoteHost：{} remotePort：{}", err, remoteHost, remotePort)
@@ -353,8 +354,8 @@ func (server *Server) getMachineList() {
 						addresses := strings.Split(machines, ";")
 						if len(addresses) > 0 {
 							for _, v := range addresses {
-								m, err := toMachine(v)
-								if err != nil {
+								m, err1 := toMachine(v)
+								if err1 != nil {
 									log.ErrorF("getMachineList 解析地址错误 GetMessageType:{}  err:{}", v, err)
 								} else {
 									if m.machineId == server.machineId {

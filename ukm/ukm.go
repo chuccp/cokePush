@@ -2,7 +2,10 @@ package ukm
 
 import (
 	"bytes"
+	log "github.com/chuccp/coke-log"
+	"io"
 	"net"
+	"sync"
 )
 
 type MODE uint8
@@ -24,7 +27,7 @@ func newUkm(udpConn *net.UDPConn, mode MODE) *ukm {
 	return &ukm{udpConn: udpConn, mode: mode, connMap: make(map[string]*Conn)}
 }
 
-func (u *ukm) accept() (*Conn, error) {
+func (u *ukm) accept() (conn *Conn, err1 error) {
 	for {
 		data := make([]byte, 1024)
 		num, rAddr, err := u.udpConn.ReadFromUDP(data)
@@ -32,33 +35,57 @@ func (u *ukm) accept() (*Conn, error) {
 			return nil, err
 		} else {
 			key := rAddr.String()
-			conn := u.connMap[key]
+			conn = u.connMap[key]
 			if conn != nil {
 				conn.push(data[0:num])
 			} else {
-				cn := NewConn(rAddr)
-				cn.push(data[0:num])
-				u.connMap[key] = cn
+				conn = NewConn(rAddr)
+				_, err1 = conn.push(data[0:num])
+				u.connMap[key] = conn
+				return
 			}
 		}
 	}
 }
 
 type Conn struct {
-	data   []byte
-	buffer *bytes.Buffer
+	data   *bytes.Buffer
 	rAddr  *net.UDPAddr
+	write  chan bool
+	isWait bool
+	wLock  *sync.Mutex
 }
 
 func (conn *Conn) push(p []byte) (n int, err error) {
-	return 0, nil
+	conn.wLock.Lock()
+	n, err = conn.data.Write(p)
+	if conn.isWait {
+		conn.write <- true
+		conn.wLock.Unlock()
+		conn.isWait = false
+	} else {
+		conn.wLock.Unlock()
+	}
+	return
 }
 func NewConn(addr *net.UDPAddr) *Conn {
-	return &Conn{rAddr: addr}
+	return &Conn{rAddr: addr, write: make(chan bool), data: new(bytes.Buffer), isWait: false, wLock: new(sync.Mutex)}
 }
 func (conn *Conn) Read(p []byte) (n int, err error) {
+	for {
+		conn.wLock.Lock()
+		n, err = conn.data.Read(p)
+		log.InfoF("=====num:{} err:{} key:{}", n, err)
+		if err == io.EOF && n == 0 {
+			conn.isWait = true
+			conn.wLock.Unlock()
+			<-conn.write
+		} else {
+			conn.wLock.Unlock()
+			return
+		}
 
-	return 0, nil
+	}
 }
 func (conn *Conn) Write(p []byte) (n int, err error) {
 	return 0, nil

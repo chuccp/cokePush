@@ -98,24 +98,25 @@ type chunk0 struct {
 }
 
 func createChunk0(chunkId uint16, classId byte, messageType byte, messageLength uint32, messageId uint32, time uint32, key byte, dataLen uint32, data []byte) *chunk0 {
-	return &chunk0{chunk: createChunkHeader(0, chunkId), classId: classId, messageType: messageType, messageLength: messageLength, messageId: messageId, time: time, key: key, dataLen: dataLen, data: data}
+	ch0:= &chunk0{chunk: createChunkHeader(0, chunkId), classId: classId, messageType: messageType, messageLength: messageLength, messageId: messageId, time: time, key: key, dataLen: dataLen, data: data}
+	return ch0
 }
 func newChunk0(chunk *chunk) *chunk0 {
 	return &chunk0{chunk: chunk}
 }
 
-func (chunk0 chunk0) toByte() []byte {
+func (ch0 *chunk0) toByte() []byte {
 	bytesArray := util.NewBuff()
-	bytesArray.Write(chunk0.chunk.toByte())
-	bytesArray.WriteByte( chunk0.classId)
-	bytesArray.WriteByte( chunk0.messageType)
-	bytesArray.Write( util.U32TOBytes(chunk0.time))
-	bytesArray.Write( util.U32TOBytes(chunk0.messageId))
-	bytesArray.Write( lengthToBytes(chunk0.messageLength))
-	if chunk0.messageLength>0{
-		bytesArray.WriteByte(  chunk0.key)
-		bytesArray.Write( lengthToBytes(chunk0.dataLen))
-		bytesArray.Write(  chunk0.data)
+	bytesArray.Write(ch0.chunk.toByte())
+	bytesArray.WriteByte( ch0.classId)
+	bytesArray.WriteByte( ch0.messageType)
+	bytesArray.Write( util.U32TOBytes(ch0.time))
+	bytesArray.Write( util.U32TOBytes(ch0.messageId))
+	bytesArray.Write( lengthToBytes(ch0.messageLength))
+	if ch0.messageLength>0{
+		bytesArray.WriteByte(  ch0.key)
+		bytesArray.Write( lengthToBytes(ch0.dataLen))
+		bytesArray.Write(  ch0.data)
 	}
 	data:=bytesArray.Bytes()
 	util.FreeBuff(bytesArray)
@@ -138,7 +139,7 @@ func createChunk1(chunkId uint16, key byte, dataLen uint32, data []byte) *chunk1
 func newChunk1(chunk *chunk) *chunk1 {
 	return &chunk1{chunk: chunk}
 }
-func (chunk1 chunk1) toByte() []byte {
+func (chunk1 *chunk1) toByte() []byte {
 	bytesArray := util.NewBuff()
 	bytesArray.Write(chunk1.chunk.toByte())
 	bytesArray.WriteByte(chunk1.key)
@@ -160,7 +161,7 @@ func newChunk2(chunk *chunk) *chunk2 {
 func createChunk2(chunkId uint16, data []byte) *chunk2 {
 	return &chunk2{chunk: createChunkHeader(2, chunkId), data: data}
 }
-func (chunk2 chunk2) toByte() []byte {
+func (chunk2 *chunk2) toByte() []byte {
 	bytesArray := util.NewBuff()
 	bytesArray.Write(chunk2.chunk.toByte())
 	bytesArray.Write(chunk2.data)
@@ -256,7 +257,6 @@ func (stream *chunkWriteStream) readChunk() IChunk {
 	stream.rdataLenTemp = end
 	stream.rMessageLength = stream.rMessageLength + end - start
 	if stream.process == 0 {
-
 		chunk := createChunk0(stream.chunkId, stream.message.GetClassId(), stream.message.GetMessageType(), stream.message.GetMessageLength(), stream.message.GetMessageId(), stream.message.GetTimestamp(), stream.keyTemp, stream.dataLenTemp, stream.dataTemp[start:end])
 		if stream.rdataLenTemp < stream.dataLenTemp {
 			stream.process = 2

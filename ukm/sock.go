@@ -4,7 +4,7 @@ import "net"
 
 func ListenerUkm(network string, address *net.UDPAddr) (*Listener, error) {
 	li := Listener{address: address}
-	return li.init()
+	return li.init(network)
 }
 
 type Listener struct {
@@ -13,8 +13,8 @@ type Listener struct {
 	ukm *ukm
 }
 
-func (l *Listener) init() ( li *Listener,err error) {
-	l.conn, err = net.ListenUDP("udp", l.address)
+func (l *Listener) init(network string) (  li *Listener,err error) {
+	l.conn, err = net.ListenUDP(network, l.address)
 	li = l
 	if err==nil{
 		l.ukm = newUkm(l.conn,SERVER)
