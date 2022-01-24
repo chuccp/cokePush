@@ -18,6 +18,13 @@ func NewBuff() *bytes.Buffer {
 	buff := poolBuff.Get().(*bytes.Buffer)
 	return buff
 }
+func BuffToBytes(buff *bytes.Buffer)[]byte {
+	data:=buff.Bytes()
+	len:=buff.Len()
+	var values  = make([]byte,len)
+	copy(values,data)
+	return values
+}
 func FreeBuff(buff *bytes.Buffer) {
 	buff.Reset()
 	poolBuff.Put(buff)

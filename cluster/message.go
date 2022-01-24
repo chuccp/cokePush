@@ -81,7 +81,7 @@ func toBytes2(host string,port int,machineId string)[]byte  {
 	buff.WriteString(strconv.Itoa(port))
 	buff.WriteByte('|')
 	buff.WriteString(machineId)
-	data:= buff.Bytes()
+	data :=util.BuffToBytes(buff)
 	util.FreeBuff(buff)
 	return data
 }
