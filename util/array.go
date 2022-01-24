@@ -23,9 +23,7 @@ func BuffToBytes(buff *bytes.Buffer)[]byte {
 	len:=buff.Len()
 	var values  = make([]byte,len)
 	copy(values,data)
-	return values
-}
-func FreeBuff(buff *bytes.Buffer) {
 	buff.Reset()
 	poolBuff.Put(buff)
+	return values
 }

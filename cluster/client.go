@@ -122,7 +122,6 @@ func (client *Client) QueryMachineType(iMsg message.IMessage) {
 	buff.WriteString("|")
 	buff.WriteString(client.server.machineId)
 	data :=util.BuffToBytes(buff)
-	util.FreeBuff(buff)
 	log.DebugF("发送数据：{}", string(data))
 	msg := backQueryMachine(data, iMsg.GetMessageId())
 	client.stream.WriteMessage(msg)

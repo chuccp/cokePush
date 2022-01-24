@@ -119,7 +119,6 @@ func (ch0 *chunk0) toByte() []byte {
 		bytesArray.Write(  ch0.data)
 	}
 	data :=util.BuffToBytes(bytesArray)
-	util.FreeBuff(bytesArray)
 	return data
 }
 
@@ -146,7 +145,6 @@ func (chunk1 *chunk1) toByte() []byte {
 	bytesArray.Write(lengthToBytes(chunk1.dataLen))
 	bytesArray.Write(chunk1.data)
 	data :=util.BuffToBytes(bytesArray)
-	util.FreeBuff(bytesArray)
 	return data
 }
 
@@ -166,7 +164,6 @@ func (chunk2 *chunk2) toByte() []byte {
 	bytesArray.Write(chunk2.chunk.toByte())
 	bytesArray.Write(chunk2.data)
 	data :=util.BuffToBytes(bytesArray)
-	util.FreeBuff(bytesArray)
 	return data
 }
 
