@@ -303,7 +303,6 @@ func (server *Server) queryMachineBasic1(host string, port int) (*machine, *km.C
 func (server *Server) queryMachineBasic() error {
 
 	qBasic := newQueryMachineBasic(server.port, server.machineId)
-	log.InfoF("qBasic  {}   {}",qBasic.GetClassId(),qBasic.GetMessageId())
 	msg, conn, err := server.request.Call(server.machine.remoteHost, server.machine.remotePort, qBasic)
 	if err == nil {
 		if message.BackMessageClass == msg.GetClassId() {

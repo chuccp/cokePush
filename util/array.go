@@ -16,9 +16,9 @@ var poolBuff = sync.Pool{New: func() interface{} {
 
 func NewBuff() *bytes.Buffer {
 	buff := poolBuff.Get().(*bytes.Buffer)
-	buff.Reset()
-	return new(bytes.Buffer)
+	return buff
 }
 func FreeBuff(buff *bytes.Buffer) {
+	buff.Reset()
 	poolBuff.Put(buff)
 }
