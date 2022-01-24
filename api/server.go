@@ -152,10 +152,10 @@ func (server *Server) Init(context *core.Context) {
 	server.context = context
 	server.query = newQuery(context)
 	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
-	server.AddRoute("/", server.root)
+	server.AddRoute("/root_version", server.root)
 	server.AddRoute("/sendmsg", server.sendMsg)
 	server.AddRoute("/sendMessage", server.sendMessage)
-	server.AddRoute("/clusterInfo", server.clusterInfo)
+	server.AddRoute("/info_user", server.clusterInfo)
 	server.AddRoute("/queryUser", server.queryUser)
 	server.AddRoute("/systemInfo", server.systemInfo)
 	server.AddRoute("/onlineUser", server.onlineUser)
