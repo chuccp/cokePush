@@ -209,6 +209,9 @@ func (server *Server) AcceptConn() {
 	}
 }
 func (server *Server) machineInfo(value ...interface{}) interface{} {
+
+	var data = make(map[string]interface{})
+	var num int32 = 0
 	mis := make([]*MachineInfo, 0)
 	queryInfo:=newQueryMachineInfo()
 	server.machineMap.eachAddress(func(remoteHost string, remotePort int) {
@@ -220,6 +223,7 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 				var mi MachineInfo
 				err1:=ffjson.Unmarshal(data,&mi)
 				if err1==nil{
+					num = mi.UserNum+num
 					mi.Address = remoteHost+":"+strconv.Itoa(remotePort)
 					mis = append(mis,&mi)
 				}else{
@@ -229,8 +233,12 @@ func (server *Server) machineInfo(value ...interface{}) interface{} {
 		}
 	})
 	vvv:=server.queryMachineInfo()
-	mis = append(mis, (vvv).(*MachineInfo))
-	return mis
+	vm:=(vvv).(*MachineInfo)
+	mis = append(mis, vm)
+	num = vm.UserNum+num
+	data["cluster"] = mis
+	data["total"] = num
+	return data
 }
 func (server *Server) queryMachineInfo(value ...interface{})interface{}{
 	var mi MachineInfo
