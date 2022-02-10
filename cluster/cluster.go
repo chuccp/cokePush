@@ -265,8 +265,9 @@ func (server *Server) clusterQueryPageUser(value ...interface{}) interface{} {
 			pageSize--
 			page.List = append(page.List, user.NewPageUser(value.GetUsername(),value.MachineAddress(),value.CreateTime()))
 
+		}else{
+			num++
 		}
-		num++
 		return true
 	})
 	return page
