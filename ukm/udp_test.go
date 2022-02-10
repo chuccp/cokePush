@@ -16,7 +16,6 @@ func TestStream_udk(t *testing.T) {
 				go func() {
 					data := make([]byte, 1024)
 					for {
-
 						num, err2 := conn.Read(data)
 						log.InfoF("======={}====={}", num, err2)
 						if err2 == nil {

@@ -14,6 +14,10 @@ github.com/chuccp/queue v0.0.0-20220119040418-7e9f9fc6ab99 h1:+8oqH5g/7cWJ46aSww
 github.com/chuccp/queue v0.0.0-20220119040418-7e9f9fc6ab99/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
 github.com/chuccp/queue v0.0.0-20220120162938-42e988ab7223 h1:BOWGhbsRnlrpgrfvWdrA1y1sI0IPDCfsJeFNP303bgM=
 github.com/chuccp/queue v0.0.0-20220120162938-42e988ab7223/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
+github.com/chuccp/queue v0.0.0-20220121020610-3195886766ad h1:L51Zhk3YV4412UH6eOl3wAo90khEzl67IQxQWOQ7/Ks=
+github.com/chuccp/queue v0.0.0-20220121020610-3195886766ad/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
+github.com/chuccp/queue v0.0.0-20220126143336-cd5829601294 h1:VlT8HMskcU+CEZHks04TRDa+TmldpblORb/KnH1Hafs=
+github.com/chuccp/queue v0.0.0-20220126143336-cd5829601294/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
 github.com/golang/protobuf v1.5.0/go.mod h1:FsONVRAS9T7sI+LIUmWTfcYkHO4aIWwzhcaSAoJOfIk=
 github.com/golang/protobuf v1.5.2 h1:ROPKBNFfQgOUMifHyP+KYbvpjbdoFNs+aK7DXlji0Tw=
 github.com/golang/protobuf v1.5.2/go.mod h1:XVQd3VNwM+JqD3oG2Ue2ip4fOMUkwXdXDdiuN0vRsmY=

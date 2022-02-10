@@ -2,10 +2,9 @@ package ukm
 
 import (
 	"bytes"
-	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/queue"
 	"io"
 	"net"
-	"sync"
 )
 
 type MODE uint8
@@ -40,7 +39,7 @@ func (u *ukm) accept() (conn *Conn, err1 error) {
 				conn.push(data[0:num])
 			} else {
 				conn = NewConn(rAddr)
-				_, err1 = conn.push(data[0:num])
+				conn.push(data[0:num])
 				u.connMap[key] = conn
 				return
 			}
@@ -49,43 +48,41 @@ func (u *ukm) accept() (conn *Conn, err1 error) {
 }
 
 type Conn struct {
-	data   *bytes.Buffer
+	buffer *bytes.Buffer
+	queue  *queue.VQueue
 	rAddr  *net.UDPAddr
 	write  chan bool
 	isWait bool
-	wLock  *sync.Mutex
 }
 
-func (conn *Conn) push(p []byte) (n int, err error) {
-	conn.wLock.Lock()
-	n, err = conn.data.Write(p)
-	if conn.isWait {
-		conn.write <- true
-		conn.wLock.Unlock()
-		conn.isWait = false
-	} else {
-		conn.wLock.Unlock()
+func (conn *Conn) push(p []byte) {
+	conn.buffer.Write(p)
+	if conn.buffer.Len() >= 1024 {
+		data := make([]byte, 1024)
+		start := 0
+		for {
+			n, err := conn.buffer.Read(data[start:])
+			if err == nil {
+				start = start + n
+				if start == 1024 {
+					conn.queue.Offer(data)
+					break
+				}
+			}
+		}
 	}
-	return
 }
 func NewConn(addr *net.UDPAddr) *Conn {
-	return &Conn{rAddr: addr, write: make(chan bool), data: new(bytes.Buffer), isWait: false, wLock: new(sync.Mutex)}
+	return &Conn{rAddr: addr, write: make(chan bool), queue: queue.NewVQueue(), isWait: false, buffer: new(bytes.Buffer)}
 }
-func (conn *Conn) Read(p []byte) (n int, err error) {
-	for {
-		conn.wLock.Lock()
-		n, err = conn.data.Read(p)
-		log.InfoF("=====num:{} err:{} key:{}", n, err)
-		if err == io.EOF && n == 0 {
-			conn.isWait = true
-			conn.wLock.Unlock()
-			<-conn.write
-		} else {
-			conn.wLock.Unlock()
-			return
-		}
-
+func (conn *Conn) Read(data []byte) (num int, err error) {
+	v, _ := conn.queue.Poll()
+	if v != nil {
+		return
+	} else {
+		return 0, io.EOF
 	}
+
 }
 func (conn *Conn) Write(p []byte) (n int, err error) {
 	return 0, nil

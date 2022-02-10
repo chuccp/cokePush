@@ -54,15 +54,17 @@ func (query *Query) queryPageUser(value ...interface{}) interface{} {
 	var num int = 0
 	query.context.EachUsers(func(key string, value *user.StoreUser) bool {
 
+		log.InfoF("==============",size)
+
 		if num==start{
 			if size==0{
 				return false
 			}
 			size--
 			page.List = append(page.List, user.NewPageUser(value.GetUsername(),value.MachineAddress(),value.CreateTime()))
-
+		}else{
+			num++
 		}
-		num++
 		return true
 	})
 	return page
