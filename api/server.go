@@ -8,6 +8,7 @@ import (
 	"github.com/chuccp/cokePush/util"
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -107,7 +108,7 @@ func (server *Server) onlineUser(w http.ResponseWriter, re *http.Request) {
 	start := util.GetStart(re)
 	size := util.GetSize(re)
 
-	log.InfoF("onlineUser  start:{} size:{}",start,size)
+	log.InfoF("onlineUser  start:{} size:{}", start, size)
 
 	page := user.NewPage()
 
@@ -123,13 +124,13 @@ func (server *Server) onlineUser(w http.ResponseWriter, re *http.Request) {
 
 	}
 
-	log.InfoF("onlineUser2  cStart:{} cSize:{}",cStart,cSize)
+	log.InfoF("onlineUser2  cStart:{} cSize:{}", cStart, cSize)
 
-	if cStart<0{
+	if cStart < 0 {
 		cStart = 0
 	}
 	clusterQueryPageUser := server.context.GetHandle("clusterQueryPageUser")
-	if clusterQueryPageUser!=nil{
+	if clusterQueryPageUser != nil {
 		p := clusterQueryPageUser(cStart, cSize).(*user.Page)
 		page.Num = p.Num + page.Num
 		page.List = append(page.List, p.List...)
@@ -151,7 +152,17 @@ func (server *Server) Start() error {
 func (server *Server) Init(context *core.Context) {
 	server.context = context
 	server.query = newQuery(context)
-	server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
+	port := os.Getenv("PORT")
+	if port != "" {
+		p, err := strconv.Atoi(port)
+		if err == nil {
+			server.port = p
+		}else{
+			server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
+		}
+	} else {
+		server.port = context.GetConfig().GetIntOrDefault("rest.server.port", 8080)
+	}
 	server.AddRoute("/root_version", server.root)
 	server.AddRoute("/sendmsg", server.sendMsg)
 	server.AddRoute("/sendMessage", server.sendMessage)
