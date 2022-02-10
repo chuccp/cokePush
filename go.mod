@@ -1,6 +1,6 @@
 module github.com/chuccp/cokePush
 
-go 1.17
+go 1.23
 
 require (
 	github.com/chuccp/coke-log v0.0.0-20220121030202-d8f6bd4dbaf0
