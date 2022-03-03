@@ -1,7 +1,7 @@
 package net
 
 import (
-	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/utils/log"
 	"net"
 	"strconv"
 )

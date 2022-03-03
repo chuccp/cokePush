@@ -1,7 +1,7 @@
 package cluster
 
 import (
-	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/utils/log"
 	"reflect"
 	"testing"
 )

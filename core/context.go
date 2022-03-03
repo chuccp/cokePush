@@ -1,9 +1,9 @@
 package core
 
 import (
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
+	"github.com/chuccp/utils/config"
 )
 
 type registerHandle func(value ...interface{}) interface{}

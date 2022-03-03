@@ -1,13 +1,13 @@
 package main
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/api"
 	"github.com/chuccp/cokePush/cluster"
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/ex"
 	"github.com/chuccp/cokePush/tcp"
+	"github.com/chuccp/utils/config"
+	"github.com/chuccp/utils/log"
 	"github.com/magiconair/properties"
 )
 
@@ -27,7 +27,7 @@ func DefaultRegister() *core.Register {
 
 }
 func main() {
-	config:=log.GetConfig()
+	config:=log.GetDefaultConfig()
 	config.SetLevel(log.InfoLevel)
 	reg := DefaultRegister()
 	cp := reg.Create()

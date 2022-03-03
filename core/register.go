@@ -1,8 +1,8 @@
 package core
 
 import (
-	log "github.com/chuccp/coke-log"
-	"github.com/chuccp/cokePush/config"
+	"github.com/chuccp/utils/config"
+	"github.com/chuccp/utils/log"
 	"os"
 	"os/signal"
 	"sync"

@@ -1,10 +1,10 @@
 package ex
 
 import (
-	log "github.com/chuccp/coke-log"
-	"github.com/chuccp/cokePush/config"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/util"
+	"github.com/chuccp/utils/config"
+	"github.com/chuccp/utils/log"
 	"net/http"
 )
 

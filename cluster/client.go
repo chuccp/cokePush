@@ -1,12 +1,12 @@
 package cluster
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/km"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/net"
 	"github.com/chuccp/cokePush/util"
+	"github.com/chuccp/utils/log"
 	"github.com/pquerna/ffjson/ffjson"
 	"strings"
 	"time"

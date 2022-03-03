@@ -1,10 +1,10 @@
 package core
 
 import (
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
-	"github.com/chuccp/queue"
+	"github.com/chuccp/utils/log"
+	"github.com/chuccp/utils/queue"
 )
 
 type HandleAddUser func(iUser user.IUser)

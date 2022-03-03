@@ -2,12 +2,12 @@ package ex
 
 import (
 	"context"
-	log "github.com/chuccp/coke-log"
 	"github.com/chuccp/cokePush/core"
 	"github.com/chuccp/cokePush/message"
 	"github.com/chuccp/cokePush/user"
 	"github.com/chuccp/cokePush/util"
-	"github.com/chuccp/queue"
+	"github.com/chuccp/utils/log"
+	"github.com/chuccp/utils/queue"
 	"github.com/pquerna/ffjson/ffjson"
 	"net/http"
 	"sync"
