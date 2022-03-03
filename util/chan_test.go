@@ -1,7 +1,7 @@
 package util
 
 import (
-	log "github.com/chuccp/coke-log"
+	"github.com/chuccp/utils/log"
 	"os"
 	"os/signal"
 	"syscall"

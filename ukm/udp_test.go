@@ -1,7 +1,7 @@
 package ukm
 
 import (
-	log "github.com/chuccp/coke-log"
+	log "github.com/chuccp/utils/log"
 	"net"
 	"testing"
 )
