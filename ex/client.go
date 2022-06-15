@@ -67,7 +67,9 @@ func newConn(username string, w http.ResponseWriter, re *http.Request, client *c
 	return c
 }
 func (u *conn) WriteMessage(iMessage message.IMessage) error {
-	data,err:=ffjson.Marshal(newHttpMessage(iMessage.GetString(message.FromUser),iMessage.GetString(message.Text)))
+	ht:= newHttpMessage(iMessage.GetString(message.FromUser),iMessage.GetString(message.Text))
+	hts:=[]*HttpMessage{ht}
+	data,err:=ffjson.Marshal(hts)
 	if err==nil{
 		u.client.queue.Offer(data)
 	}else{
