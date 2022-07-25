@@ -217,7 +217,7 @@ func (store *store) timeoutCheck() {
 func (store *store) writeBlank() {
 	log.InfoF("轮询检查http长链接")
 	for {
-		time.Sleep(time.Second * 10)
+		time.Sleep(time.Second * 2)
 		t := time.Now()
 		store.clientMap.Range(func(key, value interface{}) bool {
 			c, ok := value.(*client)
