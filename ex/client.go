@@ -108,7 +108,7 @@ func (u *conn) canWrite() bool {
 
 func (c *client) poll(username string, w http.ResponseWriter, re *http.Request) {
 	c.rLock.RLock()
-	ti := time.Now().Add(time.Second * 25)
+	ti := time.Now().Add(time.Second * 23)
 	atomic.AddInt32(&c.intPut, 1)
 	cnn := newConn(username, w, re, c)
 	v, has := c.connMap.LoadOrStore(cnn.userId, cnn)
