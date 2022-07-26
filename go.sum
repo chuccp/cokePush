@@ -2,6 +2,8 @@ github.com/chuccp/queue v0.0.0-20220207013930-9f21948142d5 h1:N1OUv6f61VRmgMxpov
 github.com/chuccp/queue v0.0.0-20220207013930-9f21948142d5/go.mod h1:mIVjEM9+9pKy+dFhSeAo1wMxO2GNrLU46xTOFJmvH60=
 github.com/chuccp/utils v0.0.0-20220228053210-92066cf2a8d0 h1:Cp508SLmP2eUdYFwV61mk1RKPHkAFaWYMnYEh8XKap8=
 github.com/chuccp/utils v0.0.0-20220228053210-92066cf2a8d0/go.mod h1:asDeXPJRvX61clbB05Q/8UQN0A7bw/y9t3zkXlBdbrw=
+github.com/chuccp/utils v0.0.0-20220725150015-15038cec4c24 h1:TcoQYGS+jNDGR4tPvJVfqw3HKVRJaL/XhzlUpQ0rFdI=
+github.com/chuccp/utils v0.0.0-20220725150015-15038cec4c24/go.mod h1:SMQ95aYRUbowCYSiH/kPwbv589Dmm0D3kGozuYEjRnc=
 github.com/go-ole/go-ole v1.2.6/go.mod h1:pprOEPIfldk/42T2oK7lQ4v4JSDwmV0As9GaiUsvbm0=
 github.com/magiconair/properties v1.8.6 h1:5ibWZ6iY0NctNGWo87LalDlEZ6R41TqbbDamhfG/Qzo=
 github.com/magiconair/properties v1.8.6/go.mod h1:y3VJvCyxH9uVvJTWEGAELF3aiYNyPKd5NZ3oSwXrF60=
